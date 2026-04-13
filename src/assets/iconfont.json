@@ -1,0 +1,37 @@
+{
+  "id": "1400426",
+  "name": "whd",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "5394544",
+      "name": "task-assigned",
+      "font_class": "task-assigned",
+      "unicode": "e651",
+      "unicode_decimal": 58961
+    },
+    {
+      "icon_id": "1270502",
+      "name": "list",
+      "font_class": "18List",
+      "unicode": "e642",
+      "unicode_decimal": 58946
+    },
+    {
+      "icon_id": "1704658",
+      "name": "list",
+      "font_class": "list",
+      "unicode": "e6fe",
+      "unicode_decimal": 59134
+    },
+    {
+      "icon_id": "705695",
+      "name": "眼睛",
+      "font_class": "yanjing",
+      "unicode": "e62b",
+      "unicode_decimal": 58923
+    }
+  ]
+}

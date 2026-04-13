@@ -1,0 +1,7 @@
+const reportCompanyAction = {
+  REPORT_COMPANY_CREATE: 'REPORT_COMPANY_CREATE',
+  REPORT_COMPANY_EDIT: 'REPORT_COMPANY_EDIT',
+  REPORT_COMPANY_DELETE: 'REPORT_COMPANY_DELETE'
+}
+
+export default reportCompanyAction
