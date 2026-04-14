@@ -266,18 +266,11 @@
                           <el-row class="">
                             <el-col :span="12">
                               <el-form-item class="postInfo-container-item" label="所属项目:">
-                                <CustomerTree
-                                  v-model="caseDetailFoemData.project"
-                                  class="project-tree-wrap"
-                                  :data="projectTreeData"
-                                  :allow-input="false"
-                                  :allow-create="true"
-                                  :manageable="true"
-                                  :show-path="false"
-                                  :default-expand-all="true"
-                                  empty-text="暂无项目数据"
-                                  search-placeholder="请输入项目名称搜索"
-                                  tip=""
+                                <TagsModal
+                                  :case-id="caseDetailFoemData.caseId"
+                                  :cust-id="caseDetailFoemData.custId"
+                                  :case-tag-info="{ tagPath: caseDetailFoemData.project, tagPathList: caseDetailFoemData.caseTagPathList }"
+                                  @change="caseDetailFoemData.project = $event"
                                 />
                               </el-form-item>
                             </el-col>
@@ -4668,7 +4661,7 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
   import SpecialInstructions from '@/views/workbench/finance/billviews/components/SpecialInstructions'
   import poppingTimeLimit from '@/views/workbench/toDoTasks/poppingTimeLimit.vue'
   import BreadCrumbCase from './BreadCrumbCase'
-  import CustomerTree from '@/components/CustomerTree'
+  import TagsModal from './TagsModal.vue'
   import { MessageBox } from 'element-ui'
 
   const goodClasses = [
@@ -4717,50 +4710,6 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
     "43",
     "44",
     "45"
-  ];
-  const mockProjectTreeData = [
-    {
-      id: 'project-1',
-      label: '重点客户项目',
-      children: [
-        {
-          id: 'project-1-1',
-          label: '商标注册推进',
-          children: [
-            {
-              id: 'project-1-1-1',
-              label: '华东区域'
-            },
-            {
-              id: 'project-1-1-2',
-              label: '华南区域'
-            }
-          ]
-        },
-        {
-          id: 'project-1-2',
-          label: '异议答辩专项'
-        }
-      ]
-    },
-    {
-      id: 'project-2',
-      label: '品牌保护项目',
-      children: [
-        {
-          id: 'project-2-1',
-          label: '维权监测'
-        },
-        {
-          id: 'project-2-2',
-          label: '证据固化'
-        }
-      ]
-    },
-    {
-      id: 'project-3',
-      label: '年度续展计划'
-    }
   ];
   import {creatematerialUrl} from "@/api/serviceApi.config.js";
   import {queryWorkGroup} from "../../../../api/systemList";
@@ -4844,7 +4793,7 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
       CaseInvestigators,
       SpecialInstructions,
       poppingTimeLimit,
-      CustomerTree
+      TagsModal
     },
     props: {
       isEdit: {
@@ -4946,7 +4895,6 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
         idCardOptions:[],
         organIdTypeList:[],
         certTypeOptions:[],
-        projectTreeData: JSON.parse(JSON.stringify(mockProjectTreeData)),
         emailDisabled: false,
         checkGoodListTotal: 0,
         checkGoodList: [],
@@ -5096,6 +5044,8 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
           appContactZip: "", //邮政编码
           appContactTel: "", //电话
           appContactEmail: "", //邮箱
+          project: "",
+          caseTagPathList: [],
           ifShareTm: "", //共同申请（0：否；1：是）传 0、1
           joinApps: [],
           madrid: '', //马德里注册
@@ -5591,6 +5541,17 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
       this.provinceList =await this.queryRegionList(1)
     },
     methods: {
+      formatCaseTagPath(caseTagPathList) {
+        if (!Array.isArray(caseTagPathList) || !caseTagPathList.length) {
+          return ''
+        }
+        return caseTagPathList.map(item => {
+          if (typeof item === 'string') {
+            return item
+          }
+          return item.tagName || ''
+        }).filter(Boolean).join('/')
+      },
       changeAppCnAddr(vlaue){
         if(this.appCnAddrChangeFlag){
           this.debouncedFunc&&this.debouncedFunc()
@@ -6780,6 +6741,8 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
       async fetchData() {
         let {data} = await queryCaseInfoUrl({caseIds: this.mainCaseIds, initFlag: 1})
         this.caseDetailFoemData = Object.assign(data, this.caseDetailFoemData);
+        this.caseDetailFoemData.project = this.formatCaseTagPath(data.caseTagPathList)
+        this.caseDetailFoemData.caseTagPathList = Array.isArray(data.caseTagPathList) ? data.caseTagPathList : []
         // 针对历史异常数据做处理，之前有问题内-外，外-外，存在version版本号未关联的情况，导致后续出现问题
         if(['内-外', '外-外'].includes(this.caseDetailFoemData.appFromto)){
           this.caseDetailFoemData.goods = this.caseDetailFoemData.goods.filter(item => {
@@ -6797,6 +6760,8 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
             // await this.appselectChange(appId)
 
             this.caseDetailFoemData = Object.assign(this.caseDetailFoemData, response.data);
+            this.caseDetailFoemData.project = this.formatCaseTagPath(response.data.caseTagPathList)
+            this.caseDetailFoemData.caseTagPathList = Array.isArray(response.data.caseTagPathList) ? response.data.caseTagPathList : []
             if (['内-外','外-外'].includes(this.caseDetailFoemData.appFromto)) {
              queryCurrencyUrl().then(res => {
                 this.currencyList = res.data
