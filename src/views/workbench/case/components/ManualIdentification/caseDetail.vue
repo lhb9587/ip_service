@@ -106,8 +106,8 @@
         </el-form-item>
       </el-row>
       <el-row class="">
-        <el-form-item label="所属项目">
-          {{caseDetailFoemData.project}}
+        <el-form-item label="标签">
+          {{formatCaseTagPath(caseDetailFoemData.caseTagPathList)}}
         </el-form-item>
         <el-form-item label="合同编号">
           {{caseDetailFoemData.contractNumber}}
@@ -2430,6 +2430,18 @@ import { template } from 'underscore';
       }
     },
     methods: {
+      //标签格式化
+      formatCaseTagPath(caseTagPathList) {
+        if (!Array.isArray(caseTagPathList) || !caseTagPathList.length) {
+          return ''
+        }
+        return caseTagPathList.map(item => {
+          if (typeof item === 'string') {
+            return item
+          }
+          return item.tagName || ''
+        }).filter(Boolean).join('/')
+      },
       //去除字段#字符
       removeSpecial(text){
         if (text && text != 'undefined') {

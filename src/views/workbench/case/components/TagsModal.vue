@@ -1,6 +1,6 @@
 <template>
   <div class="tags-modal">
-    <div class="tags-modal__inline">
+    <div v-if="showInline" class="tags-modal__inline">
       <div class="tags-modal__content" :class="{ 'is-empty': !caseTagCurrentPath }">
         {{ caseTagCurrentPath || '未设置标签' }}
       </div>
@@ -24,7 +24,7 @@
     </div>
 
     <el-dialog
-      title="设置标签"
+      :title="dialogTitle"
       :visible.sync="dialogVisible"
       width="720px"
       append-to-body
@@ -35,6 +35,7 @@
     >
       <div class="tags-modal__tree">
         <CustomerTree
+          ref="caseTagTree"
           v-model="caseTagDraftValue"
           :data="projectTreeData"
           :label-key="labelKey"
@@ -60,17 +61,44 @@
 
 <script>
 import CustomerTree from '@/components/CustomerTree'
-import { queryCaseTagTree, queryCaseTagCustAllow, updateCaseTag, clearCaseTag } from '@/api/caseTag'
+import { queryCaseTagTree, queryCaseTagCustAllow, batchUpdateCaseTag, updateCaseTag, clearCaseTag } from '@/api/caseTag'
 
 export default {
   name: 'TagsModal',
   components: {
     CustomerTree
   },
+  computed: {
+    isBatchMode: function() {
+      return this.batchMode
+    },
+    targetCaseIdList: function() {
+      const source = this.isBatchMode
+        ? (this.caseIdList && this.caseIdList.length ? this.caseIdList : [])
+        : (this.caseId ? [this.caseId] : [])
+      return Array.from(new Set(source.filter(Boolean)))
+    },
+    targetCaseKey: function() {
+      return this.targetCaseIdList.join(',')
+    },
+    dialogTitle: function() {
+      return this.isBatchMode ? '批量设置标签' : '设置标签'
+    }
+  },
   props: {
     caseId: {
       type: [String, Number],
       default: ''
+    },
+    caseIdList: {
+      type: Array,
+      default: function() {
+        return []
+      }
+    },
+    batchMode: {
+      type: Boolean,
+      default: false
     },
     custId: {
       type: [String, Number],
@@ -110,6 +138,10 @@ export default {
       type: Boolean,
       default: false
     },
+    showInline: {
+      type: Boolean,
+      default: true
+    },
     searchPlaceholder: {
       type: String,
       default: '请输入标签名称搜索'
@@ -128,15 +160,20 @@ export default {
       caseTagDraftNode: null,
       caseTagSubmitting: false,
       caseTagCustAllow: false,
+      caseTagCustAllowMessage: '',
       projectTreeData: []
     }
   },
   watch: {
-    caseId: {
+    targetCaseKey: {
       immediate: true,
       handler: function(val) {
         if (!val) {
           this.caseTagCustAllow = false
+          this.caseTagCustAllowMessage = ''
+          this.caseTagCurrentPath = ''
+          this.caseTagDraftValue = ''
+          this.caseTagDraftNode = null
           this.projectTreeData = []
           return
         }
@@ -153,13 +190,25 @@ export default {
     }
   },
   methods: {
+    buildCaseTagCustAllowParams: function() {
+      if (this.targetCaseIdList.length <= 1) {
+        return { caseId: this.targetCaseIdList[0] }
+      }
+      return { caseIdList: this.targetCaseIdList }
+    },
     getCaseTagCustAllow: function() {
-      return queryCaseTagCustAllow({
-        caseId: this.caseId
-      }).then(res => {
-        this.caseTagCustAllow = !!(res && res.data && Number(res.data.result) === 1)
+      const params = this.buildCaseTagCustAllowParams()
+      return queryCaseTagCustAllow(params).then(res => {
+        const allow = !!(res && res.data && Number(res.data.result) === 1)
+        this.caseTagCustAllow = allow
+        this.caseTagCustAllowMessage = allow
+          ? ((res && res.message) || '')
+          : '当前案件无权设置标签'
+        return this.caseTagCustAllow
       }).catch(() => {
         this.caseTagCustAllow = false
+        this.caseTagCustAllowMessage = ''
+        return false
       })
     },
     getCaseTagTree: function() {
@@ -173,8 +222,8 @@ export default {
       if (!caseTagInfo) {
         return ''
       }
-      if (caseTagInfo.tagPath) {
-        return caseTagInfo.tagPath
+      if (Object.prototype.hasOwnProperty.call(caseTagInfo, 'tagPath')) {
+        return caseTagInfo.tagPath || ''
       }
       if (Array.isArray(caseTagInfo.tagPathList) && caseTagInfo.tagPathList.length) {
         return caseTagInfo.tagPathList.map(item => {
@@ -204,11 +253,18 @@ export default {
       this.caseTagDraftValue = tagPath
       this.caseTagDraftNode = null
     },
-    openDialog: function() {
-      if (!this.caseId || this.caseTagSubmitting || !this.caseTagCustAllow) {
+    openDialog: async function() {
+      if (!this.targetCaseIdList.length || this.caseTagSubmitting) {
         return
       }
-      this.caseTagDraftValue = this.caseTagCurrentPath || ''
+      if (!this.caseTagCustAllow) {
+        const allow = await this.getCaseTagCustAllow()
+        if (!allow) {
+          this.caseTagCustAllowMessage && this.$message.error(this.caseTagCustAllowMessage)
+          return
+        }
+      }
+      this.caseTagDraftValue = this.isBatchMode ? '' : (this.caseTagCurrentPath || '')
       this.caseTagDraftNode = null
       this.dialogVisible = true
     },
@@ -250,6 +306,10 @@ export default {
         this.closeDialog()
         return
       }
+      if (this.isBatchMode) {
+        this.batchUpdateCaseTag(this.caseTagDraftNode)
+        return
+      }
       this.updateSingleCaseTag(this.caseTagDraftNode)
     },
     isCreatedCaseTagNode: function(node) {
@@ -264,14 +324,38 @@ export default {
     buildCaseTagUpdateParams: function(node) {
       const params = {
         caseId: this.caseId,
-        custId: this.custId
-      }
-      if (this.isCreatedCaseTagNode(node)) {
-        params.tagPath = node.pathValue || this.caseTagValue || ''
-      } else {
-        params.tagId = node.id
+        custId: this.custId,
+        tagPath: (node && node.pathValue) || this.caseTagValue || ''
       }
       return params
+    },
+    batchUpdateCaseTag: function(node) {
+      const params = {
+        caseIdList: this.targetCaseIdList,
+        tagPath: (node && node.pathValue) || this.caseTagDraftValue || ''
+      }
+      this.caseTagSubmitting = true
+      return batchUpdateCaseTag(params).then(res => {
+        if (res && res.success === false) {
+          throw new Error(res.message || '标签设置失败')
+        }
+        this.caseTagDraftValue = ''
+        this.caseTagDraftNode = null
+        this.$message.success((res && res.message) || '标签设置成功')
+        this.getCaseTagTree()
+        this.closeDialog(true)
+        this.$emit('change', {
+          batch: true,
+          caseIdList: this.targetCaseIdList.slice(),
+          response: res
+        })
+        return res
+      }).catch(err => {
+        this.$message.error((err && err.message) || '标签设置失败')
+        throw err
+      }).finally(() => {
+        this.caseTagSubmitting = false
+      })
     },
     updateSingleCaseTag: function(node) {
       const tagPath = node && node.pathValue ? node.pathValue : this.caseTagValue
@@ -286,7 +370,7 @@ export default {
         this.caseTagCurrentPath = serverTagPath
         this.caseTagDraftValue = serverTagPath
         this.$message.success((res && res.message) || '标签设置成功')
-        this.getCaseTagTree()
+        // this.getCaseTagTree()
         this.closeDialog(true)
         this.$emit('change', serverTagPath)
         return res

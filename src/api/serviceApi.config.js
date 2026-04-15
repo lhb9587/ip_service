@@ -419,6 +419,7 @@ const URL_Tem = {
   queryCaseList: SYS_URL1 + 'trademarkCase/queryCaseList',
   queryCaseTagTree: SYS_URL1 + 'trademarkCase/queryCaseTagTree',
   queryCaseTagCustAllow: SYS_URL1 + 'trademarkCase/queryCaseTagCustAllow',
+  batchUpdateCaseTag: SYS_URL1 + 'trademarkCase/batchUpdateCaseTag',
   updateCaseTag: SYS_URL1 + 'trademarkCase/updateCaseTag',
   clearCaseTag: SYS_URL1 + 'trademarkCase/clearCaseTag',
   getAllCaseInfo: SYS_URL1 + 'caseInfo/getAllCaseInfo',

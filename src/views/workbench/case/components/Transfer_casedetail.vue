@@ -63,8 +63,13 @@
                           </el-row>
                           <el-row class="">
                             <el-col :span="12">
-                              <el-form-item class="postInfo-container-item" label="所属项目:">
-                                <el-input v-model="caseDetailFoemData.project" />
+                              <el-form-item class="postInfo-container-item" label="标签:">
+                                <TagsModal
+                                  :case-id="caseDetailFoemData.caseId"
+                                  :cust-id="caseDetailFoemData.custId"
+                                  :case-tag-info="{ tagPath: tagPath, tagPathList: caseDetailFoemData.caseTagPathList }"
+                                  @change="tagPath = $event"
+                                />
                               </el-form-item>
                             </el-col>
                             <el-col :span="12">
@@ -4710,6 +4715,7 @@
     import CheckGoodsList from "./CheckGoodsList";
     import {queryImageGoodsList} from "../../../../api/caseList";
     import { isInputAll } from '../../../../utils'
+    import TagsModal from './TagsModal.vue'
     import { MessageBox } from 'element-ui'
   const defaultdcmr = [
     "filePath",
@@ -5010,7 +5016,8 @@
       CaseInvestigators,
       SpecialInstructions,
       poppingTimeLimit,
-      BreadCrumbCase
+      BreadCrumbCase,
+      TagsModal
     },
     props: {
       isEdit: {
@@ -5751,7 +5758,8 @@
         queryCustomerNameIdList:[],
         caseTypeList:[],
         appCnAddrChangeFlag:false,
-        transAppCnAddrChangeFlag:false
+        transAppCnAddrChangeFlag:false,
+        tagPath:''
       };
     },
     watch: {
@@ -5956,6 +5964,17 @@
       this.tfProvinceList =await this.queryRegionList(1)
     },
     methods: {
+      formatCaseTagPath(caseTagPathList) {
+        if (!Array.isArray(caseTagPathList) || !caseTagPathList.length) {
+          return ''
+        }
+        return caseTagPathList.map(item => {
+          if (typeof item === 'string') {
+            return item
+          }
+          return item.tagName || ''
+        }).filter(Boolean).join('/')
+      },
       changeAppCnAddr(vlaue){
         if(this.appCnAddrChangeFlag){
           this.debouncedFunc&&this.debouncedFunc()
@@ -7212,12 +7231,14 @@
       async  fetchData (type) {
         let {data}  =  await queryCaseInfoUrl({ caseIds: this.mainCaseIds ,initFlag:1})
         this.caseDetailFoemData=Object.assign(data, this.caseDetailFoemData);
+        this.tagPath = this.formatCaseTagPath(data.caseTagPathList)
         queryReplaceAgencyName().then(res=>{
           this.otherAgencyList = res.data
         })
         queryCaseInfoUrl({ caseIds: this.mainCaseIds })
           .then(response => {
             this.caseDetailFoemData = Object.assign(this.caseDetailFoemData, response.data);
+            this.tagPath = this.formatCaseTagPath(response.data.caseTagPathList)
             if ((this.caseDetailFoemData.caseType == '注册驳回复审' || this.caseDetailFoemData.caseType == '国际注册驳回复审')&&!this.caseDetailFoemData.isChangeName) {
               // this.caseDetailFoemData.isChangeName = 0
               this.caseDetailFoemData.preChangeAppCnName = ''

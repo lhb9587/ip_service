@@ -125,7 +125,7 @@
               type="text"
               size="mini"
               :disabled="disabled"
-              @click.stop="editNode(treeNodeData)"
+              @click="editNode(treeNodeData)"
             >
               编辑
             </el-button>
@@ -460,6 +460,7 @@ export default {
         siblings: this.treeData
       }).then(function(label) {
         const node = _this.ensurePath([label])
+        _this.scrollTreeToBottom()
         _this.$emit('node-add', {
           type: 'root',
           node: node ? _this.createNodePayload(node) : null
@@ -921,6 +922,15 @@ export default {
           source: node.source
         }
       }, this)
+    },
+    scrollTreeToBottom: function() {
+      this.$nextTick(function() {
+        const treeEl = this.$refs.tree && this.$refs.tree.$el
+        if (!treeEl) {
+          return
+        }
+        treeEl.scrollTop = treeEl.scrollHeight
+      })
     },
     focus: function() {
       const inputRef = this.$refs.manualInput

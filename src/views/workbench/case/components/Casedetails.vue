@@ -265,12 +265,12 @@
                           </el-row>
                           <el-row class="">
                             <el-col :span="12">
-                              <el-form-item class="postInfo-container-item" label="所属项目:">
+                              <el-form-item class="postInfo-container-item" label="标签:">
                                 <TagsModal
                                   :case-id="caseDetailFoemData.caseId"
                                   :cust-id="caseDetailFoemData.custId"
-                                  :case-tag-info="{ tagPath: caseDetailFoemData.project, tagPathList: caseDetailFoemData.caseTagPathList }"
-                                  @change="caseDetailFoemData.project = $event"
+                                  :case-tag-info="{ tagPath: tagPath, tagPathList: caseDetailFoemData.caseTagPathList }"
+                                  @change="tagPath = $event"
                                 />
                               </el-form-item>
                             </el-col>
@@ -5044,8 +5044,6 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
           appContactZip: "", //邮政编码
           appContactTel: "", //电话
           appContactEmail: "", //邮箱
-          project: "",
-          caseTagPathList: [],
           ifShareTm: "", //共同申请（0：否；1：是）传 0、1
           joinApps: [],
           madrid: '', //马德里注册
@@ -5376,7 +5374,8 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
           "投标"],
         materialArray: [],
         queryCustomerNameIdList: [],
-        appCnAddrChangeFlag:false
+        appCnAddrChangeFlag:false,
+        tagPath: "",
       };
     },
     mixins: [require('@/views/workbench/case/components/TabNameStorage.vue').default],
@@ -5407,11 +5406,6 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
       //   },
       //   immediate: true
       // },
-      "caseDetailFoemData.project":{
-        handler(v){
-          console.log(v,'v@@@@');
-        }
-      },
       "caseDetailFoemData.otherAgency": {
         handler(v){
           if(!Number(v)) {
@@ -6741,7 +6735,7 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
       async fetchData() {
         let {data} = await queryCaseInfoUrl({caseIds: this.mainCaseIds, initFlag: 1})
         this.caseDetailFoemData = Object.assign(data, this.caseDetailFoemData);
-        this.caseDetailFoemData.project = this.formatCaseTagPath(data.caseTagPathList)
+        this.tagPath = this.formatCaseTagPath(data.caseTagPathList)
         this.caseDetailFoemData.caseTagPathList = Array.isArray(data.caseTagPathList) ? data.caseTagPathList : []
         // 针对历史异常数据做处理，之前有问题内-外，外-外，存在version版本号未关联的情况，导致后续出现问题
         if(['内-外', '外-外'].includes(this.caseDetailFoemData.appFromto)){
@@ -6760,7 +6754,7 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
             // await this.appselectChange(appId)
 
             this.caseDetailFoemData = Object.assign(this.caseDetailFoemData, response.data);
-            this.caseDetailFoemData.project = this.formatCaseTagPath(response.data.caseTagPathList)
+            this.tagPath = this.formatCaseTagPath(response.data.caseTagPathList)
             this.caseDetailFoemData.caseTagPathList = Array.isArray(response.data.caseTagPathList) ? response.data.caseTagPathList : []
             if (['内-外','外-外'].includes(this.caseDetailFoemData.appFromto)) {
              queryCurrencyUrl().then(res => {
@@ -8923,23 +8917,4 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
     }
   }
 
-  .project-tree-wrap {
-
-    /deep/ .customer-tree__toolbar {
-      margin-bottom: 8px;
-    }
-
-    /deep/ .customer-tree__selected {
-      margin-bottom: 8px;
-      padding: 8px 12px;
-    }
-
-    /deep/ .customer-tree__tree {
-      max-height: 240px;
-    }
-
-    /deep/ .customer-tree__tip {
-      display: none;
-    }
-  }
 </style>

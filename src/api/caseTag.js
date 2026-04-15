@@ -19,6 +19,15 @@ export function queryCaseTagCustAllow(data) {
   })
 }
 
+export function batchUpdateCaseTag(data) {
+  return request({
+    url: serviceApi.batchUpdateCaseTag,
+    method: 'post',
+    data,
+    isLoading: true
+  })
+}
+
 export function updateCaseTag(data) {
   return request({
     url: serviceApi.updateCaseTag,
