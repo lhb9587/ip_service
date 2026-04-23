@@ -692,6 +692,13 @@ export function createSpecialTemplate(data) {
     data
   })
 }
+export function offerPriceAutorank(data) {
+  return request({
+    url: serviceApi.offerPriceAutorank,
+    method: 'post',
+    data
+  })
+}
 export function createBillTemplateUrl(data) {
   return request({
     url: serviceApi.createBillTemplateUrl,

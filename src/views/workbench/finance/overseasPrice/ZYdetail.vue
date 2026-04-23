@@ -108,6 +108,9 @@
                  type="primary"
                  @click="createAndEdit('create')">新建
       </el-button>
+      <el-button style="position: absolute;right: 60px" size="mini" type="primary"
+                 @click="autoRank">自动排序
+      </el-button>
     </div>
 
     <pl-table
@@ -455,7 +458,7 @@
           </el-col>
           <el-col :span="6">
             <el-form-item label="报价档位" class="postInfo-container-item">
-              <el-select style="" v-model="rowData.priceLevel" placeholder="" clearable>
+              <el-select style="" v-model="rowData.priceLevel" placeholder="" clearable @change="changePriceLevel">
                 <el-option
                   v-for="item in [{id: 0, label: '低档'}, {id: 1, label: '中档'}, {id: 2, label: '高档'}]"
                   :key="item.id"
@@ -861,7 +864,8 @@
     modifyOfferPrice,
     createOfferPrice,
     deleteOfferPrice,
-    queryCurrencyUrl
+    queryCurrencyUrl,
+    offerPriceAutorank
   } from '@/api/billApi'
   import {queryCountry, queryOtherCustomerListUrl} from '@/api/caseDetail'
   import Pagination from '@/components/Pagination'
@@ -905,6 +909,7 @@
     },
     data() {
       return {
+        _prevPriceLevel: undefined,
         fileType: '',
         neiwaiSyn: 0,
         caseTypeIdList: [],
@@ -971,6 +976,45 @@
       this.queryOfferPriceRules()
     },
     methods: {
+      autoRank() {
+        this.$confirm('是否确认更新档位和排序！', '提示', {
+          confirmButtonText: '确认',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          offerPriceAutorank({
+            caseTypeId: this.postForm.caseTypeId,
+            countryCn: this.postForm.countryCn,
+            colour: this.colour,
+            picture: this.picture,
+            changeType: this.postForm.changeType || undefined,
+          }).then(res => {
+            this.$message.success('自动排序成功')
+            this.ZYtableData = res.data
+            this.total = res.total
+            this.priceLevel = undefined
+            // this.queryOfferPrice(true)
+          })
+        }).catch(() => {})
+      },
+      changePriceLevel(val) {
+        if ((this._prevPriceLevel || this._prevPriceLevel === 0) && this._prevPriceLevel !== val) {
+          this.$confirm('当前档位设置与系统档位规则不符，请确认是否手动修改？', '提示', {
+            confirmButtonText: '修改',
+            cancelButtonText: '取消修改',
+            type: 'warning'
+          }).then(() => {
+            const priceLevelStrMap = {
+              0: '低',
+              1: '中',
+              2: '高'
+            }
+            this.$set(this.rowData, 'priceLevelStr', priceLevelStrMap[val])
+          }).catch(() => {
+            this.$set(this.rowData, 'priceLevel', this._prevPriceLevel)
+          })
+        }
+      },
       upMove(index) {
         const data = this.ZYtableData[index]
         this.ZYtableData.splice(index, 1)
@@ -1192,6 +1236,7 @@
           this.dialogView = true
           this.title = '修改'
           this.rowData = JSON.parse(JSON.stringify(row))
+          this._prevPriceLevel = this.rowData.priceLevel
           this.rowData.custId = +this.rowData.custId
           this.$set(this.rowData, 'updateFlag1', 1)
           this.$set(this.rowData, 'updateFlag2', 1)
@@ -1211,6 +1256,7 @@
             this.dialogView = true
             this.title = '复制新建'
             this.rowData = res.data
+            this._prevPriceLevel = this.rowData.priceLevel
             this.$set(this.rowData, 'updateFlag1', 1)
             this.$set(this.rowData, 'updateFlag2', 1)
             this.$set(this.rowData, 'updateFlag3', 1)
