@@ -708,6 +708,24 @@
                   </el-form-item>
                 </el-col>
               </el-row>
+              <el-row>
+                <el-col :span="24">
+                  <el-upload
+                    ref="upload"
+                    class="upload-demo"
+                    name="attachFile"
+                    :data="uploadFileData"
+                    :action="creatematerial"
+                    :file-list="fileList"
+                    :before-upload="beforeFileUpload"
+                    :on-remove="onFileRemove"
+                    :on-success="onFileSuccess"
+                  >
+                  <el-button type="primary" size="mini">上传</el-button>
+                </el-upload>
+                </el-col>
+                
+              </el-row>
               <el-row class="">
                 <el-col :span="24">
                   <el-form-item label="国籍:">
@@ -832,6 +850,7 @@
 import { DatePicker, Select, Option } from "element-ui";
 import Goods from "@/views/workbench/case/components/Goods.vue";
 import JoinList from "@/views/workbench/case/components/JoinList.vue";
+import { creatematerial } from '@/api/ipServiceApi.config.js'
 import CaseInvestigators from "@/views/workbench/case/components/CaseInvestigators.vue";
 import {
   queryCaseInfoUrl,
@@ -909,6 +928,11 @@ export default {
   },
   data() {
     return {
+      creatematerial,
+      uploadFileData: {
+        tokenID: this.$store.getters.token,
+        objType: 301703
+      },
       invoiceTitleList: [],
       currencyList: [],
       goodsVersionList: [],

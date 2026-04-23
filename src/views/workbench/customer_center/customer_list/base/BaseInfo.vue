@@ -554,7 +554,7 @@
                              class="edit-border" default-first-option :clearable='true'
                              placeholder="请选择" multiple
                              v-model="customerBaseInfo.customerManageArray" filterable>
-                    <el-option v-for="item in seletData.managementCommitteePartner.filter(i => !!i)" :key="item.userId"
+                    <el-option v-for="item in $store.getters.userList" :key="item.userId"
                                :label="item.fullname" :value="item.userId">
                       <UserIconAndUserName :user-id="item.userId"></UserIconAndUserName>
                     </el-option>
@@ -562,7 +562,7 @@
                   <el-select size="mini" v-else disabled class="edit-border" default-first-option :clearable='true'
                              placeholder="请选择" multiple
                              v-model="customerBaseInfo.customerManageArray" filterable>
-                    <el-option v-for="item in seletData.managementCommitteePartner.filter(i => !!i)" :key="item.userId"
+                    <el-option v-for="item in $store.getters.userList" :key="item.userId"
                                :label="item.fullname" :value="item.userId">
                       <UserIconAndUserName :user-id="item.userId"></UserIconAndUserName>
                     </el-option>

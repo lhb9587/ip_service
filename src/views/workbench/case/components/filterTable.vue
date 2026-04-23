@@ -356,6 +356,7 @@
         <el-button v-if="pageTitle==='案件管理' && $store.getters.permissions.includes(387)" type="primary" size="small" @click="changeCaseStage">修改案件阶段进展</el-button>
         <el-button v-if="pageTitle==='案件管理' && $store.getters.permissions.includes(388)" type="primary" size="small" @click="changeCaseType">修改案件类型</el-button>
         <el-button v-if="pageTitle==='案件管理'" type="primary" size="small" @click="setBrand">设置品牌</el-button>
+        <el-button v-if="pageTitle==='案件管理'" type="primary" size="small" @click="openBatchSetTags">批量设置标签</el-button>
         <el-popover
           width="400"
           trigger="click"
@@ -578,6 +579,13 @@
       :materialTypeId="getSelectedRows().length?getSelectedRows()[0].materialTypeId:null" :caseTypeId="getSelectedRows().length?getSelectedRows()[0].caseTypeId:null" :caseIds='willtableCaseIdList'
        :showTable='showTable'  @closeTable='closeTable'>
     </Willtable>
+    <TagsModal
+      ref="batchTagsModal"
+      :batch-mode="true"
+      :case-id-list="batchTagCaseIdList"
+      :show-inline="false"
+      @change="handleBatchCaseTagChange"
+    />
     <el-dialog :modal-append-to-body="false" :append-to-body="false" :close-on-click-modal="false" :title="uploadType" :visible.sync="uploadState" width="70%" >
       <el-table :data="getCurFilterCaseData()" border>
         <el-table-column type="index" width="60" label="序号" align="left">
@@ -1290,6 +1298,7 @@ import  DateFilter from '@/components/ag-date-filter'
 import RelevantDialog from './RelevantDialog'
 import PriceGrid from './PriceGrid'
 import TrademarkWritingDetail from "../trademarkWriting/trademarkWritingDetail";
+import TagsModal from "./TagsModal";
 import {queryCustomerContactByCustContactIdUrl, queryCustomerContactByCustIdUrl,queryCustomerAddrAll} from "../../../../api/caseDetail";
 import {
   getCaseStage,
@@ -1358,6 +1367,7 @@ export default {
       caseSurplusAddress: '',
       caseSurplusView: false,
       caseSurplusList: [],
+      batchTagCaseIdList: [],
       brandArray: [],
       brandForm: {
         ppId: '',
@@ -1822,6 +1832,21 @@ export default {
       }
       this.brandForm.caseIdList = [...new Set(this.getSelectedRows().map(item => item.caseId))]
       this.brandForm.custId = [...new Set(this.getSelectedRows().map(item => item.custId).filter(Boolean))][0]
+    },
+    openBatchSetTags() {
+      const caseIdList = [...new Set(this.getSelectedRows().map(item => item.caseId).filter(Boolean))]
+      if (!caseIdList.length) {
+        this.$message.error('请选择案件！')
+        return
+      }
+      this.batchTagCaseIdList = caseIdList
+      this.$nextTick(() => {
+        this.$refs.batchTagsModal && this.$refs.batchTagsModal.openDialog()
+      })
+    },
+    handleBatchCaseTagChange() {
+      this.batchTagCaseIdList = []
+      this.queryCaseList()
     },
     queryWithdraw(caseTypeId) {
       caseTypeId === 48 && !this.withdrawList.length && queryWithdraw({ caseTypeId }).then(res => {
@@ -5298,7 +5323,8 @@ export default {
     CaseInvestigators,
     UploadProofreading,
     FileDownLoadDialog,
-    VueWilltable
+    VueWilltable,
+    TagsModal
     // AgGridVue
   }
 };
