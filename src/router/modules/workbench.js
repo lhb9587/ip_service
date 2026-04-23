@@ -1032,7 +1032,7 @@ const workRouter = {
           name: 'trademarkWriting',
           meta: {
             title: '商标撰写',
-            // permissions: [20],
+            permissions: [375],
             // keepAlive: true,
               icon: '任务'
           }
@@ -2557,7 +2557,7 @@ const workRouter = {
             title: '审批管理',
             keepAlive: true,
             icon: '申请',
-            permissions: [418]
+            permissions: [446]
           }
         },
         {
