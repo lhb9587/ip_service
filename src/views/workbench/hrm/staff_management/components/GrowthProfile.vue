@@ -38,8 +38,8 @@
         <div class="top-right" v-if="isShowEdit">
           <template v-if="formData.auditStatus !== 0">
             <el-button v-if="!isEdit" @click="handleEdit">编辑档案</el-button>
-            <!--            <el-button v-if="isEdit && !status" @click="dataSave">保存</el-button>-->
             <el-button v-if="isEdit" @click="submitCheckUp">提交{{status ? '' : '审核'}}</el-button>
+            <el-button v-if="isEdit && !status" @click="submitCheckUp(2)">暂存</el-button>
           </template>
           <template v-if="formData.auditStatus === 0">
             <el-alert
@@ -61,6 +61,14 @@
               title="审核未通过"
               type="warning"
               :description="formData.comment">
+            </el-alert>
+          </template>
+          <template v-else-if="formData.auditStatus === 3">
+            <el-alert
+              title="有未提交的审核信息"
+              type="warning"
+              :description="formData.comment"
+              :closable="false">
             </el-alert>
           </template>
         </div>
@@ -2029,7 +2037,11 @@ export default {
       alert('数据保存')
     },
     // 提交检查,检查填写项是否必填
-    submitCheckUp() {
+    submitCheckUp(personStatus) {
+      if (personStatus === 2) {
+        this.submit(personStatus)
+        return
+      }
       if(!this.$store.getters.permissions.includes(363)){
         let formStr = ''
         let table = []
@@ -2086,22 +2098,25 @@ export default {
             cancelButtonText: '取消',
             type: showConfirmButton ? 'warning' : 'error'
           }).then(action => {
-            this.submit()
+            this.submit(personStatus)
           }).catch(() => {});
         } else {
-          this.submit()
+          this.submit(personStatus)
         }
       } else {
         this.submit()
       }
     },
-    // 提交审核
-    submit() {
+    // 提交审核 
+    submit(personStatus) {
+      console.log(personStatus,'personStatus');
+      
       this.isEdit = false
-      this.formData.status = this.status
+      const submitStatus = personStatus == 2 ? personStatus : this.status
+      this.formData.status = submitStatus
       upsertTalentPersonInfo(this.formData).then(res => {
         if (res.success) {
-          var message = this.status ? '更新员工信息成功' : '提交审核成功'
+          var message = submitStatus === 2 ? '暂存成功' : (this.status ? '更新员工信息成功' : '提交审核成功')
           this.$message({
             message: message,
             type: 'success'
@@ -2513,6 +2528,7 @@ export default {
     .el-button{
       float: right;
       margin-bottom: 10px;
+      margin-left: 10px;
     }
     .el-alert{
       float: right;
