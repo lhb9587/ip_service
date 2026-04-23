@@ -431,7 +431,8 @@
           this.eventRecordId = row.eventRecordId
           this.taskInfo = {
             taskId: row.taskId,
-            type: 'edit'
+            type: 'edit',
+            taskType:row.taskType
           }
 
         }
@@ -442,7 +443,8 @@
           this.eventRecordId = row.eventRecordId
           this.taskInfo = {
             taskId: row.taskId,
-            type: 'audit'
+            type: 'audit',
+            taskType:row.taskType
           }
         }
         if (row.pageId == 100 || row.pageId == 150 || row.pageId == 151) {

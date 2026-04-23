@@ -57,12 +57,28 @@
             </el-radio-group>
           </el-form-item>
         </el-row>
-        <el-row>
+        <el-row v-if="isLawsuitOrProtect">
           <el-form-item label="电子卷是否完整：">
             <el-radio-group v-model="submitData.tdDoc" style="margin-left: 10px">
               <el-radio :label='1'>是</el-radio>
               <el-radio :label='0'>否</el-radio>
             </el-radio-group>
+          </el-form-item>
+        </el-row>
+        <el-row v-else>
+          <el-form-item label="是否核销所有时限：">
+            <el-radio-group v-model="submitData.tdTimelimit" style="margin-left: 10px">
+              <el-radio :label='1'>是</el-radio>
+              <el-radio :label='0'>否</el-radio>
+            </el-radio-group>
+          </el-form-item>
+          <el-form-item label="确认处理方式：">
+            <el-select v-model="submitData.todoModeList" placeholder="请选择" filterable clearable multiple>
+              <el-option v-for="item in handleKindList"
+                :key="item.id"
+                :label="item.label" :value="item.id">{{item.label}}
+              </el-option>
+            </el-select>
           </el-form-item>
         </el-row>
         <el-row>
@@ -140,7 +156,7 @@
       <el-button @click="delEven()">取 消</el-button>
       <el-button type="primary" @click="submit" v-if="submitData.typeName !== '闭卷单'">确 定</el-button>
       <el-button type="primary" @click="submit" v-if="submitData.typeName === '闭卷单'">保 存</el-button>
-      <el-button type="primary" @click="submitBiJuanWithChecks" v-if="submitData.typeName === '闭卷单'">提 交</el-button>
+      <el-button type="primary" @click="submitBiJuan" v-if="submitData.typeName === '闭卷单'">提 交</el-button>
     </div>
     <el-dialog title="请选择查看人" :close-on-click-modal="false" append-to-body :visible.sync="encryptionDialog" width="30%" :before-close="closeEncryption">
       <virtual-select placeholder="请选择可查看人" style="flex: 1;margin-left: 10px;margin-top: 5px" class="virtual-select" :isUser="true" clearable multiple   :data="$store.getters.userList" v-model="encryptionUserList"   filterable :render="(data)=>$commonUtils.UserRender(data,this)" >
@@ -206,6 +222,7 @@ export default {
       encryptionDialog: false,
       encryptionUserList: [], // 文件可查看人
       isEncryption: false, // 文件是否加密
+      handleKindList: [{id: 1, label: '补开账单'},{id: 2, label: '向客户发确认函'},{id: 3, label: '指示函存入系统'},{id: 4, label: '转达官文'},{id: 5, label: '其它'}],
       flielist: [],
       submitData: {
         docTypeName:'',
@@ -348,21 +365,57 @@ export default {
       }
       return true
     },
-    async submitBiJuanWithChecks() {
+    submitBiJuan(){
       if (!this.submitData.materialTypeId && this.submitData.materialIdList && this.submitData.materialIdList.length) {
         this.$message.error('请选择文件/事件类型')
         return
       }
-      if (this.submitData.tdMail !== 1) {
-        this.$message.error('请先确认“是否有转达官文或待报告客户的任务”为是，再提交申请')
+      console.log(this.isLawsuitOrProtect,'this.isLawsuitOrProtect');
+      
+      if (this.isLawsuitOrProtect) {
+        this.submitBiJuanWithChecks()
+      }else{
+        this.submitBiJuanNoChecks()
+      }
+    },
+    submitBiJuanNoChecks(){
+      if(
+        (this.submitData.tdMail !== 0 && this.submitData.tdMail !== 1)
+        &&(this.submitData.tdBill !== 0 && this.submitData.tdBill !== 1)
+        &&(this.submitData.tdTimelimit !== 0 && this.submitData.tdTimelimit !== 1)
+        &&(this.submitData.todoModeList&&this.submitData.todoModeList.length == 0)
+      ){
+        this.$message.error('请填写至少一项闭卷信息，否则不能提交申请!')
+        return;
+      }
+      submitCaseClose({ ...this.submitData, caseIds: this.curCaseId }).then(res => {
+        this.$message.success('提交成功！')
+        this.$emit("changeFalse", true);
+      })
+    },
+    async submitBiJuanWithChecks() {
+      if (this.submitData.tdMail !== 0 && this.submitData.tdMail !== 1) {
+        this.$message.error('请填写“是否有转达官文或待报告客户的任务”')
         return
       }
-      if (this.submitData.tdBill !== 1) {
-        this.$message.error('请先确认“是否有未开账单”为是，再提交申请')
+      if (this.submitData.tdBill !== 0 && this.submitData.tdBill !== 1) {
+        this.$message.error('请填写“是否有未开账单”')
+        return
+      }
+      if (this.submitData.tdDoc !== 0 && this.submitData.tdDoc !== 1) {
+        this.$message.error('请填写“电子卷是否完整”')
+        return
+      }
+      if (this.submitData.tdMail === 1) {
+        this.$message.error('请完成转达官文或待报告客户的任务，否则不能提交闭卷')
+        return
+      }
+      if (this.submitData.tdBill === 1) {
+        this.$message.error('请完成未开账单，否则不能提交闭卷')
         return
       }
       if (this.submitData.tdDoc !== 1) {
-        this.$message.error('请先确认“电子卷是否完整”为是，再提交申请')
+        this.$message.error('请上传完整电子卷，否则不能提交闭卷')
         return
       }
       if (!(await this.validateCloseCaseBeforeSubmit())) {
@@ -371,8 +424,6 @@ export default {
       submitCaseClose({ ...this.submitData, caseIds: this.curCaseId }).then(res => {
         this.$message.success('提交成功！')
         this.$emit("changeFalse", true);
-      }).catch(err => {
-        this.$message.error('提交失败！')
       })
     },
     updataEven() {
@@ -518,16 +569,13 @@ export default {
      //  this.uploadFileData.materialTypeId = this.submitData.materialTypeId;
       // this.uploadFileData.caseIds=[1,2,3]
     },
-    async submit(){
+    submit(){
       if((!this.submitData.materialIdList||!this.submitData.materialIdList.length)&&this.submitData.typeName !== '闭卷单') {
         this.$message.error('请上传文件')
         return
       }
       if (!this.submitData.materialTypeId && this.submitData.materialIdList && this.submitData.materialIdList.length) {
         this.$message.error('请选择文件/事件类型')
-        return
-      }
-      if (!(await this.validateCloseCaseBeforeSubmit())) {
         return
       }
       this.submitData.caseIds= this.curCaseId
@@ -552,6 +600,13 @@ export default {
         item => item.typeName === n
       ).doctId;
     },
+  },
+  computed: {
+    //判断类型是否是诉讼或者是保护
+    isLawsuitOrProtect() {
+      const lawsuitOrProtectType = [2,3]
+      return lawsuitOrProtectType.includes(this.taskType)
+    }
   }
 };
 </script>
