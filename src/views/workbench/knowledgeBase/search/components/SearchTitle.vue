@@ -147,6 +147,7 @@
             v-if="item.filterType==='autocomplete'"
             v-model="queryModuleData[item.property]"
             :fetch-suggestions="(queryString,cb)=>querySearchAsync(queryString, index, item.property, item.filterName,cb)"
+            @select="selectedItem=>handleAutocompleteSelect(selectedItem, item.property, item.filterName)"
             placeholder="请输入内容"
             filterable
             :popper-append-to-body="false"
@@ -255,6 +256,16 @@
     },
     methods:{
       leftCheckChange() {},
+      handleAutocompleteSelect(selectedItem, property, filterName) {
+        if (!selectedItem || selectedItem.id === "-1") {
+          this.$set(this.queryModuleData, property, "");
+          return;
+        }
+        const selectedValue = filterName === "客户"
+          ? (selectedItem.value2 || selectedItem.value)
+          : selectedItem.value;
+        this.$set(this.queryModuleData, property, selectedValue);
+      },
       handleSearch(){
        this.queryDocList(1)
         this.dialogVisible=false
