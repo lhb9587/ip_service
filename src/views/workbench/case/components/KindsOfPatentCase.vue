@@ -3107,6 +3107,12 @@
       }
     },
     computed: {
+      appIdList() {
+        return this.caseDetailFormData.patentCaseApplicationList && this.caseDetailFormData.patentCaseApplicationList.map(i => i.appId) || []
+      },
+      appIdListKey() {
+        return this.appIdList.join(',')
+      },
       isShowDCF(){
         const arrayA = [102,122,143]
         const arrayB = this.caseDetailFormData.designatedCountryList || []
@@ -3140,6 +3146,7 @@
       }
       return {
         invoiceTitleList: [],
+        caseInfoInitializing: false,
         designatedCountryOptions:[],
         selctedArrList: [],
         imageUrl: '',
@@ -3273,6 +3280,11 @@
         immediate: true,
         deep: true
       },
+      'appIdListKey'(n, o) {
+        if (!this.caseInfoInitializing && n !== o) {
+          this.getInvoiceTitle()
+        }
+      },
       'caseDetailFormData.patentPriorityClaimList': {
         handler(n) {
           this.hasPatentPriority = false
@@ -3362,7 +3374,8 @@
       getInvoiceTitle() {
         queryFixedCompanies({
           custId: this.caseDetailFormData.custId,
-          appId: this.caseDetailFormData.patentCaseApplicationList[0] && this.caseDetailFormData.patentCaseApplicationList[0].appId
+          appIdArray: this.appIdList,
+          // appId: this.caseDetailFormData.patentCaseApplicationList[0] && this.caseDetailFormData.patentCaseApplicationList[0].appId
         }).then(res => {
           this.invoiceTitleList = res.data
         })
@@ -3908,11 +3921,15 @@
         this.caseDetailFormData.whdAgencyName = data.whdAgencyName || '万慧达律所'
       },
       async queryCaseInfo(caseIds) {
+        this.caseInfoInitializing = true
         let { data } = await queryPatentCaseInfo({ caseIds, initFlag: 1 })
         this.caseDetailFormData = Object.assign(data, this.caseDetailFormData)
         let res = await queryPatentCaseInfo({ caseIds })
         this.caseDetailFormData = res.data
         this.getInvoiceTitle()
+        this.$nextTick(() => {
+          this.caseInfoInitializing = false
+        })
         this.queryAddrByAppIds(this.caseDetailFormData.patentCaseApplicationList)
         this.imageUrl = this.caseDetailFormData.materials && this.caseDetailFormData.materials.find(i => i.materialTypeId == 301510) && this.caseDetailFormData.materials.find(i => i.materialTypeId == 301510).address
         this.backData = JSON.parse(JSON.stringify(res.data))
