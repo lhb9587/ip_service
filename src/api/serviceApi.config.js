@@ -19,6 +19,11 @@ const SYS_URL13 = '/ai_write/'
 const SYS_URL14 = '/ip_site/interface/'
 
 const URL_Tem = {
+  patentWritingappExamine: SYS_URL1 + 'patentWriting/patentWritingappExamine',
+  queryPatentWritingList: SYS_URL1 + 'patentWriting/queryPatentWritingList',
+  queryPatentWritingDetail: SYS_URL1 + 'patentWriting/queryPatentWritingDetail',
+  createPatentWriting: SYS_URL1 + 'patentWriting/createPatentWriting',
+  patentWritingappSubmit: SYS_URL1 + 'patentWriting/patentWritingappSubmit',
   queryFixedCompanies: SYS_URL1 + 'company/queryFixedCompanies',
   //平台账户管理
   createPlatform: SYS_URL14 + 'platform/createPlatform',
@@ -265,6 +270,7 @@ const URL_Tem = {
   queryPayAccountByPermission: SYS_URL1 + 'payment/queryPayAccountByPermission',
 
   // 境外报价
+  offerPriceAutorank: SYS_URL1 + 'offer/offerPriceAutorank',
   createSpecialTemplate: SYS_URL1 + 'offer/createSpecialTemplate',
   batchModifyPriceSortNo: SYS_URL1 + 'offer/batchModifyPriceSortNo',
   copyOfferPrice: SYS_URL1 + 'offer/copyOfferPrice',
@@ -600,6 +606,7 @@ const URL_Tem = {
   analysisFile: 'ip_wordToPdf/interface/' + 'trademarkCase/analysisFile',
   fileMergePdf: 'ip_wordToPdf/interface/' + 'patentMaterial/fileMergePdf',
   mergePdf: 'ip_wordToPdf/interface/' + 'patentMaterial/mergePdf',
+  mergePdf2: 'ip_wordToPdf/interface/' + 'patentMaterial/mergePdf2',
   deleteCaseEventUrl: SYS_URL1 + 'trademarkCase/deleteCaseEvent',
   deleteMail: SYS_URL1 + 'trademarkCase/deleteMail',
   updateCaseEventUrl: SYS_URL1 + 'trademarkCase/updateCaseEvent ',

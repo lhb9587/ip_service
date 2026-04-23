@@ -60,6 +60,14 @@ export function mergePdf(data) {
     isLoading: true
   })
 }
+export function mergePdf2(data) {
+  return request({
+    url: serviceApi.mergePdf2,
+    method: 'post',
+    data,
+    isLoading: true
+  })
+}
 export function fileMergePdf(data) {
   return request({
     url: serviceApi.fileMergePdf,

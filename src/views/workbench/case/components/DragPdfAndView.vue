@@ -30,14 +30,15 @@
     </div>
 
     <div class="fl-ac-jc" style="margin-top: 15px">
-      <el-button size="small" type="primary" @click="mergeDragFile" v-if="type !=='view'">合 并</el-button>
+      <el-button size="small" type="primary" @click="mergeDragFile" v-if="type !=='view' && type !=='audit'">合 并</el-button>
+      <el-button size="small" type="primary" @click="mergeDragFile2" v-if="type =='audit'">合 并</el-button>
       <el-button size="small" @click="$emit('closeMergeDialog')">取 消</el-button>
     </div>
   </div>
 </template>
 
 <script>
-  import {mergePdf} from "../../../../api/caseDetail";
+  import {mergePdf,mergePdf2} from "../../../../api/caseDetail";
 
   export default {
     name: "DragPdfAndView",
@@ -137,6 +138,17 @@
         }).then(res => {
           this.$message.success('合并成功!')
           this.$emit('closeMergeDialog', true)
+        })
+      },
+      mergeDragFile2() {
+        mergePdf2({
+          name: this.mergeName,
+          caseId: this.caseId[0],
+          idList: this.dragDataList.map(item => item.id)
+        }).then(res => {
+          if(res.success && res.data){
+            window.open(`/ipdoc${res.data}`.replace(/[+]/g, '%2B'))
+          }
         })
       },
       rowDragEnd(event) {

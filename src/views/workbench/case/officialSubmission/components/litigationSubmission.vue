@@ -5692,7 +5692,7 @@
     </div>
   </el-dialog>
   <el-dialog append-to-body :visible.sync="mergeFileView" title="合成副本" width="80%" :close-on-click-modal="false">
-    <drag-pdf-and-view v-if="mergeFileView" type="view" :mergeFileList="mergeFileList" :caseId="curCaseId" @closeMergeDialog="closeMergeDialog"></drag-pdf-and-view>
+    <drag-pdf-and-view v-if="mergeFileView" :type="submitType" :mergeFileList="mergeFileList" :caseId="curCaseId" @closeMergeDialog="closeMergeDialog"></drag-pdf-and-view>
   </el-dialog>
 </div>
 </template>
@@ -5771,6 +5771,9 @@ import treeVue from '../../../../../components/ag-year-filter/tree.vue';
     },
     name: "litigationSubmission",
     computed: {
+      submitType() {
+        return this.submitData.submitStatus === 5 ? "audit" : "view"
+      },
       reportMatter() {
         return this.submitData.reportMatter || ''
       },
