@@ -598,7 +598,7 @@
                 >
                   <template slot-scope="scope">
                     <div class="handle">
-                      <span @click="handlePatentInventor('edit', scope.row)">修改</span>
+                      <span @click="handlePatentInventor('edit', scope.row, scope.$index)">修改</span>
                       <span @click="handlePatentInventor('del',{}, scope.$index)">删除</span>
                     </div>
                   </template>
@@ -3218,6 +3218,9 @@
         },
         curCustLevel: false,
         patentInventorTitle: '',
+        patentInventorIndex: -1,
+        inventorOriginalMaterialId: '',
+        inventorMaterialDeleteList: [],
         patentInventorItem: {
           inventorCtitle: '',
           inventorEtitle: '',
@@ -3589,9 +3592,7 @@
         this.$set(this.patentInventorItem, 'materialName', '')
         this.inventorMaterialFileList = []
         if (materialId) {
-          deleteMaterial({ materialId }).then(res => {
-            this.$message.success(res.message || '删除成功')
-          })
+          this.inventorMaterialDeleteList.push(materialId)
         }
       },
       onInventorMaterialExceed() {
@@ -3898,11 +3899,14 @@
       handlePatentInventor(flag, data, index) {
         // notOpenSign
         flag == 'add' ? this.patentInventorTitle = '添加发明人' : this.patentInventorTitle = '修改发明人'
-        data ? this.patentInventorItem = data : ''
-        this.patentInventorItem.notOpenSign = this.patentInventorItem.notOpenSign || '0'
         if (flag == 'del') {
           this.caseDetailFormData.patentInventorList.splice(index, 1)
         } else {
+          this.patentInventorIndex = flag == 'edit' ? index : -1
+          this.patentInventorItem = data ? JSON.parse(JSON.stringify(data)) : {}
+          this.inventorOriginalMaterialId = this.patentInventorItem.materialId || ''
+          this.inventorMaterialDeleteList = []
+          this.patentInventorItem.notOpenSign = this.patentInventorItem.notOpenSign || '0'
           this.patentInventor = true
           this.inventorMaterialFileList = this.getInventorMaterialFileList(this.patentInventorItem)
           this.queryInventorList()
@@ -3917,18 +3921,41 @@
       },
       //添加发明人
       addPatentInventor(f) {
+        this.patentInventorItem.inventorCountryStr = this.patentCountryList.find(i => i.cityCode == this.patentInventorItem.inventorCountry)
+          && this.patentCountryList.find(i => i.cityCode == this.patentInventorItem.inventorCountry).label || ''
         if (f == '添加发明人') {
           this.$set(this.patentInventorItem, 'no', this.caseDetailFormData.patentInventorList.length + 1)
           this.patentInventorItem.inventorCountryStr = this.patentCountryList.find(i => i.cityCode == this.patentInventorItem.inventorCountry)
             && this.patentCountryList.find(i => i.cityCode == this.patentInventorItem.inventorCountry).label || ''
           this.caseDetailFormData.patentInventorList.push(this.patentInventorItem)
           this.changeNo(this.caseDetailFormData.patentInventorList.length, '', this.caseDetailFormData.patentInventorList.length - 1)
+        } else if (this.patentInventorIndex > -1) {
+          this.$set(this.caseDetailFormData.patentInventorList, this.patentInventorIndex, this.patentInventorItem)
         }
-        this.closePatentInventor()
+        this.deleteInventorMaterials(this.inventorMaterialDeleteList)
+        this.closePatentInventor(true)
       },
       //关闭发明人弹框
-      closePatentInventor() {
+      deleteInventorMaterials(materialIds) {
+        Array.from(new Set(materialIds.filter(Boolean))).forEach(materialId => {
+          deleteMaterial({ materialId })
+        })
+      },
+      clearUnsavedInventorMaterials() {
+        const materialIds = this.inventorMaterialDeleteList.filter(materialId => materialId != this.inventorOriginalMaterialId)
+        if (this.patentInventorItem.materialId && this.patentInventorItem.materialId != this.inventorOriginalMaterialId) {
+          materialIds.push(this.patentInventorItem.materialId)
+        }
+        this.deleteInventorMaterials(materialIds)
+      },
+      closePatentInventor(isSave) {
+        if (isSave !== true) {
+          this.clearUnsavedInventorMaterials()
+        }
         this.patentInventor = false
+        this.patentInventorIndex = -1
+        this.inventorOriginalMaterialId = ''
+        this.inventorMaterialDeleteList = []
         this.inventorMaterialFileList = []
         this.patentInventorItem = {
           inventorCtitle: '',
