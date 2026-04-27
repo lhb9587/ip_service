@@ -137,6 +137,8 @@
             scope.row.pageId==153
             ||
             scope.row.pageId==154
+            ||
+            scope.row.pageId==501
             "
           >处理</el-button>
         </template>
@@ -236,6 +238,22 @@
         <el-button type="primary" @click="handleAgentSign">同 意</el-button>
       </span>
     </el-dialog>
+
+    <!-- 专利撰写 -->
+     <el-dialog
+      :title="patentWritingTitle"
+      append-to-body
+      :visible.sync="patentWritingView"
+      width="80%"
+      :modal="false"
+      top="100px"
+      class="dragDialog writingDialog"
+      :close-on-click-modal="false"
+      v-dialogDrag
+      :before-close="closePatentWriting"
+    >
+      <PatentDrafting v-if="patentWritingView" :dialogType="dialogType" :dialogId="dialogId" :taskType="4" :caseId="patentCaseIds" @changeFalse="closePatentWriting"/>
+    </el-dialog>
   </div>
 </template>
 
@@ -245,20 +263,28 @@
   import litigationSubmission from '@/views/workbench/case/officialSubmission/components/litigationSubmission.vue'
   import Pagination from '@/components/Pagination'; // secondary package based on el-pagination
   import DetailOfficialCommunication from '@/views/workbench/case/officialCommunication/detailOfficialCommunication';
+  import PatentDrafting from '@/views/workbench/case/components/PatentDrafting.vue';
   import { queryAlltask, queryInstruction, submitOfficalAudit, auditOfficalDoc, queryDocs ,lowCreditAudit,taskFinishTask, agentReview} from '@/api/caseList.js'
+  import { queryPatentWritingDetail } from "@/api/patentWriting";
   export default {
     props:{
       taskType:{
         default:2
       }
     },
-    components: { Pagination, DetailOfficialCommunication,litigationSubmission,HandOver,UploadMetailDetail },
+    components: { Pagination, DetailOfficialCommunication,litigationSubmission,HandOver,UploadMetailDetail, PatentDrafting },
     name: 'litigationTask',
     activated() {
       this.queryAlltask()
     },
     data() {
       return {
+        patentWritingTask: {},
+        patentCaseIds: [],
+        dialogId: '',
+        dialogType: '',
+        patentWritingTitle: '',
+        patentWritingView: false,
         taskInfo:{
           taskId: '',
           type: ''
@@ -336,6 +362,39 @@
       //this.queryAlltask()
     },
     methods: {
+      async doWriteTask(type) {
+        this.patentCaseIds = [this.patentWritingTask.caseId]
+        this.dialogId = this.patentWritingTask.pwId
+        const detail = await queryPatentWritingDetail({ id: this.dialogId })
+        if (!detail.data.taskUserId || detail.data.taskUserId !== this.$store.getters.userId) {
+          this.$message.error('您不是当前任务的任务人!')
+          return
+        }
+        switch (type) {
+          case 1:
+            this.dialogType = 'submit'
+            this.patentWritingTitle = '提交'
+            this.patentWritingView = true
+            break
+          case 2:
+            this.dialogType = 'audit'
+            this.patentWritingTitle = '审核'
+            this.patentWritingView = true
+            break
+          case 3:
+            this.dialogType = 'audit'
+            this.patentWritingTitle = '审核'
+            this.patentWritingView = true
+            break
+          default:
+            this.$message.error('无需处理！')
+            break
+        }
+      },
+      closePatentWriting(flag) {
+        this.patentWritingView = false
+        flag === true && this.handleSearch()
+      },
       changeFalse(flag) {
         this.bJView = false
         this.bJCaseId = ''
@@ -419,6 +478,11 @@
         return row[property] === value;
       },
       jumpMassfiling(row) {
+        if (row.pageId== 501) {
+          this.patentWritingTask = row
+          this.doWriteTask(row.taskNo)
+          return
+        }
         if (row.pageId== 154) {
           this.agentSignCaseInfo = row
           this.agentSignDialogVisible = true
@@ -1075,6 +1139,15 @@
             color: #606266;
           }
         }
+      }
+    }
+  }
+  .writingDialog {
+    > > > .el-dialog {
+      max-height: 90vh !important;
+
+      .el-dialog__body {
+        padding-top: 0;
       }
     }
   }

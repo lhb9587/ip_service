@@ -1037,6 +1037,18 @@ const workRouter = {
               icon: '任务'
           }
         },
+        {
+          path: 'patentWriting',
+          component: () =>
+            import('@/views/workbench/case/patentWriting'),
+          name: 'patentWriting',
+          meta: {
+            title: '专利撰写',
+            permissions: [536],
+            // keepAlive: true,
+              icon: '任务'
+          }
+        },
 
         {
           path: 'officialDocuments',

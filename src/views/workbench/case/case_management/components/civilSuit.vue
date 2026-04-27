@@ -282,7 +282,8 @@
                 <el-menu-item index="1-2-5-2">致函外代所</el-menu-item>
               </el-submenu>
               <el-menu-item index="1-2-6">对方当事人往来</el-menu-item>
-              <!--<el-menu-item index="1-2-7">特批预立卷审批</el-menu-item>-->
+              <!-- <el-menu-item index="1-2-7">特批预立卷审批</el-menu-item> -->
+              <el-menu-item index="1-2-8" v-if="taskType == 4">撰写审核</el-menu-item>
             </el-submenu>
             <el-submenu index="1-3" v-allow="154">
               <template slot="title">新建时限</template>
@@ -685,6 +686,9 @@
       <BulkUploadFile :taskType="taskType" v-if="uploadState" :patentOneMaterial="patentOneMaterial" :uploadType="uploadType"
                       :curCaseId="getSelectedRows().map(item=>item.caseId)" @changeFalse="closeSelect"></BulkUploadFile>
     </el-dialog>
+    <el-dialog class="patent-writing" title="撰写审核" :visible.sync="draftState" width="70%">
+      <PatentDrafting v-if="draftState" :taskType="taskType" :caseId="getSelectedRows().map(item=>item.caseId)" @changeFalse="draftState = false" />                
+    </el-dialog>
     <litigationSubmission @updateData="queryCaseList" :business="business" :taskType="taskType" :changeDoc="isChangeDoc"
                           :isAuditing="isAuditing"
                           :title="title"
@@ -928,6 +932,7 @@ import rememberPosition from '@/mixins/rememberPosition.vue'
   import { addWaitCases, queryCasesByTaskId } from '../../../../../api/caseList'
   import CreateWorkHour from "../../../workTime/components/CreateWorkHour";
   import {createPOA, queryMandate,createReceipt} from "../../../../../api/formList";
+import PatentDrafting from '@/views/workbench/case/components/PatentDrafting.vue';
   export default {
     mixins: [rememberPosition],
     props: {
@@ -967,6 +972,7 @@ import rememberPosition from '@/mixins/rememberPosition.vue'
         tableHeader = JSON.parse(localStorage.getItem('tableHeader')).find(item => item.name == this.$route.name).tableHeader
       }
       return {
+        draftState: false,
         scrollTop: 0,
         isEnterPressed: false, // 标志变量，用于防止回车键触发handleChangeSearch
         billRecordList: [],
@@ -2009,6 +2015,7 @@ import rememberPosition from '@/mixins/rememberPosition.vue'
         }
          // this.$emit('closeModel')
         // this.changeKeepAlive()
+        this.draftState = false
       },
       checkBox(e, property, values) {
         if (this.queryModuleData[property].includes('') && this.queryModuleData[property].filter(item => item).length != values.filter(item => item).length) {
@@ -2176,6 +2183,10 @@ import rememberPosition from '@/mixins/rememberPosition.vue'
         if (key === "1-2-7") {
           this.multipleTypeText = "特批预立卷审批";
           this.uploadType = "特批预立卷审批";
+          // this.queryCaseList();
+        }
+        if (key === "1-2-8") {
+          this.draftState = true;
           // this.queryCaseList();
         }
         if (key === "批量操作") {
@@ -4078,7 +4089,8 @@ import rememberPosition from '@/mixins/rememberPosition.vue'
       cpcGrid,
       FileDownLoadDialog,
       UploadProofreading,
-      TrawSheetDetails
+      TrawSheetDetails,
+      PatentDrafting
     }
   };
 </script>
@@ -4903,6 +4915,12 @@ import rememberPosition from '@/mixins/rememberPosition.vue'
     >>>.el-dialog__body {
       padding-bottom: 50px;
       padding-top: 20px;
+    }
+  }
+  .patent-writing {
+    >>>.el-dialog__body {
+      padding-top: 0;
+      padding-bottom: 0;
     }
   }
   >>>.el-tabs__content{
