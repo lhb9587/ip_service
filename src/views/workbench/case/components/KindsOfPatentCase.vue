@@ -2973,6 +2973,30 @@
                   </el-form-item>
                 </el-col>
               </el-row>
+              <el-row class="inventor-material-row">
+                <el-col :span="24">
+                  <el-form-item label="证件上传:">
+                    <el-upload
+                      ref="inventorMaterialUpload"
+                      class="upload-demo"
+                      name="attachFile"
+                      :data="inventorUploadFileData"
+                      :action="creatematerialUrl"
+                      :file-list="inventorMaterialFileList"
+                      :limit="1"
+                      :on-change="onInventorMaterialChange"
+                      :before-upload="beforeInventorMaterialUpload"
+                      :on-remove="onInventorMaterialRemove"
+                      :on-success="onInventorMaterialSuccess"
+                      :on-error="onInventorMaterialError"
+                      :on-exceed="onInventorMaterialExceed"
+                      :on-preview="onInventorMaterialPreview"
+                    >
+                      <el-button type="primary" size="mini" style="margin-left:10px">上传</el-button>
+                    </el-upload>
+                  </el-form-item>
+                </el-col>
+              </el-row>
               <el-row class="">
                 <el-col :span="24">
                   <el-form-item label="国籍:">
@@ -3089,7 +3113,7 @@
   } from '@/api/caseDetail'
   import { queryAddrByAppIds } from '@/api/applicant'
   import { billSubmitUrl, billDiscount } from '@/api/billApi'
-  import { querycustSelectClass } from '@/api/customerList.js'
+  import { querycustSelectClass, deleteMaterial } from '@/api/customerList.js'
   import ApplicantDetail from '../../customer_management/applicant/components/ApplicantDetail'
   import Applicant_list from '../../customer_management/applicant/applicant_list'
 
@@ -3155,6 +3179,11 @@
           materialTypeId: 301510
         },
         creatematerialUrl,
+        inventorUploadFileData: {
+          tokenID: this.$store.getters.token,
+          objType: 301703
+        },
+        inventorMaterialFileList: [],
         nameList: [],
         hasZw: false,
         hasPatentPriority: false,
@@ -3374,8 +3403,7 @@
       getInvoiceTitle() {
         queryFixedCompanies({
           custId: this.caseDetailFormData.custId,
-          appIdArray: this.appIdList,
-          // appId: this.caseDetailFormData.patentCaseApplicationList[0] && this.caseDetailFormData.patentCaseApplicationList[0].appId
+          appIdArray: this.caseDetailFormData.patentCaseApplicationList[0] && this.caseDetailFormData.patentCaseApplicationList.map(j => j.appId)
         }).then(res => {
           this.invoiceTitleList = res.data
         })
@@ -3506,6 +3534,75 @@
       successBack(file) {
         this.imageUrl = file.data[0].address
       },
+      getInventorMaterialFileList(row) {
+        if (!row || !row.materialId) {
+          return []
+        }
+        return [{
+          name: row.materialName || row.name || row.address,
+          url: row.address ? `ipdoc${row.address}` : '',
+          materialId: row.materialId,
+          address: row.address,
+          materialName: row.materialName
+        }]
+      },
+      beforeInventorMaterialUpload(file) {
+        const maxSize = 50 * 1024 * 1024
+        if (file.size > maxSize) {
+          this.$message.error('文件大小不能超过50M')
+          return false
+        }
+        return true
+      },
+      onInventorMaterialChange(file) {
+        if (file && file.raw) {
+          this.inventorMaterialFileList = [{
+            name: file.name,
+            uid: file.uid,
+            status: file.status || 'ready',
+            percentage: file.percentage || 0,
+            raw: file.raw
+          }]
+        }
+      },
+      onInventorMaterialSuccess(res, file) {
+        const material = res && res.data && res.data[0]
+        if (!material || !material.materialId) {
+          this.$message.error('上传失败，请重新上传')
+          this.inventorMaterialFileList = this.getInventorMaterialFileList(this.patentInventorItem)
+          return
+        }
+        this.$set(this.patentInventorItem, 'materialId', material.materialId)
+        this.$set(this.patentInventorItem, 'address', material.address)
+        this.$set(this.patentInventorItem, 'materialName', material.materialName || material.name || file.name)
+        this.inventorMaterialFileList = this.getInventorMaterialFileList(this.patentInventorItem)
+        this.$message.success('上传成功')
+      },
+      onInventorMaterialError() {
+        this.inventorMaterialFileList = this.getInventorMaterialFileList(this.patentInventorItem)
+        this.$message.error('上传失败，请重新上传')
+      },
+      onInventorMaterialRemove(file) {
+        const materialId = file.materialId || (file.response && file.response.data && file.response.data[0] && file.response.data[0].materialId)
+        this.$set(this.patentInventorItem, 'materialId', '')
+        this.$set(this.patentInventorItem, 'address', '')
+        this.$set(this.patentInventorItem, 'materialName', '')
+        this.inventorMaterialFileList = []
+        if (materialId) {
+          deleteMaterial({ materialId }).then(res => {
+            this.$message.success(res.message || '删除成功')
+          })
+        }
+      },
+      onInventorMaterialExceed() {
+        this.$message.warning('证件材料只能上传一个文件，请先删除已有文件')
+      },
+      onInventorMaterialPreview(file) {
+        const address = file.address || (file.response && file.response.data && file.response.data[0] && file.response.data[0].address)
+        if (address) {
+          window.open(`ipdoc${address}`, '_blank')
+        }
+      },
       changeName(v, f) { // f: inventorEtitle || inventorCtitle
         if(!v)return
         let obj = null
@@ -3533,6 +3630,10 @@
             !this.patentInventorItem.inventorCountry && (this.patentInventorItem.inventorCountry = obj.inventorCountry)
             !this.patentInventorItem.inventorIdno && (this.patentInventorItem.inventorIdno = obj.inventorIdno)
           }
+          !this.patentInventorItem.materialId && this.$set(this.patentInventorItem, 'materialId', obj.materialId)
+          !this.patentInventorItem.address && this.$set(this.patentInventorItem, 'address', obj.address)
+          !this.patentInventorItem.materialName && this.$set(this.patentInventorItem, 'materialName', obj.materialName)
+          this.inventorMaterialFileList = this.getInventorMaterialFileList(this.patentInventorItem)
           // f == 'inventorEtitle' ? this.patentInventorItem.inventorCtitle = obj.inventorCtitle
           //   : this.patentInventorItem.inventorEtitle = obj.inventorEtitle
           // this.patentInventorItem.invAddressCn = obj.invAddressCn
@@ -3803,6 +3904,7 @@
           this.caseDetailFormData.patentInventorList.splice(index, 1)
         } else {
           this.patentInventor = true
+          this.inventorMaterialFileList = this.getInventorMaterialFileList(this.patentInventorItem)
           this.queryInventorList()
         }
       },
@@ -3827,6 +3929,7 @@
       //关闭发明人弹框
       closePatentInventor() {
         this.patentInventor = false
+        this.inventorMaterialFileList = []
         this.patentInventorItem = {
           inventorCtitle: '',
           inventorEtitle: '',
@@ -4343,6 +4446,24 @@
 
   .adress {
     width: 100%;
+  }
+
+  /deep/ .inventor-material-row {
+    .el-col {
+      height: auto !important;
+      min-height: 70px;
+    }
+
+    .el-form-item__content {
+      line-height: normal !important;
+      padding-top: 5px;
+      padding-bottom: 5px;
+    }
+
+    .el-upload-list {
+      min-height: 28px;
+      line-height: 28px;
+    }
   }
 
   .avatar-uploader {

@@ -710,19 +710,24 @@
               </el-row>
               <el-row>
                 <el-col :span="24">
-                  <el-upload
-                    ref="upload"
-                    class="upload-demo"
-                    name="attachFile"
-                    :data="uploadFileData"
-                    :action="creatematerial"
-                    :file-list="fileList"
-                    :before-upload="beforeFileUpload"
-                    :on-remove="onFileRemove"
-                    :on-success="onFileSuccess"
-                  >
-                  <el-button type="primary" size="mini">上传</el-button>
-                </el-upload>
+                  <el-form-item label="证件上传:">
+                    <el-upload
+                      ref="upload"
+                      class="upload-demo"
+                      name="attachFile"
+                      :data="uploadFileData"
+                      :action="creatematerial"
+                      :file-list="inventorMaterialFileList"
+                      :limit="1"
+                      :before-upload="beforeInventorMaterialUpload"
+                      :on-remove="onInventorMaterialRemove"
+                      :on-success="onInventorMaterialSuccess"
+                      :on-exceed="onInventorMaterialExceed"
+                      :on-preview="onInventorMaterialPreview"
+                    >
+                    <el-button type="primary" size="mini">上传</el-button>
+                  </el-upload>
+                  </el-form-item>
                 </el-col>
                 
               </el-row>
@@ -842,11 +847,11 @@
 </template>
 
 <script>
-  import {
-    queryCustomerNameId,
-    queryBankaccountListBycustId,
-    queryFixedCompanies
-  } from "@/api/caseList.js";
+import {
+  queryCustomerNameId,
+  queryBankaccountListBycustId,
+  queryFixedCompanies
+} from "@/api/caseList.js";
 import { DatePicker, Select, Option } from "element-ui";
 import Goods from "@/views/workbench/case/components/Goods.vue";
 import JoinList from "@/views/workbench/case/components/JoinList.vue";
@@ -886,7 +891,7 @@ import {
   queryOtherCustomerListUrl,
   queryCustUserList
 } from "@/api/caseDetail";
-import {queryCurrencyUrl} from "@/api/customerList";
+import { queryCurrencyUrl, deleteMaterial } from "@/api/customerList";
 import { billDiscount, getCaseList, getAbroadBill } from "@/api/billApi";
   import ApplicantDetail from "../../../views/workbench/customer_management/applicant/components/ApplicantDetail";
   import Applicant_list from "../../../views/workbench/customer_management/applicant/applicant_list";
@@ -933,6 +938,7 @@ export default {
         tokenID: this.$store.getters.token,
         objType: 301703
       },
+      inventorMaterialFileList: [],
       invoiceTitleList: [],
       currencyList: [],
       goodsVersionList: [],
@@ -1305,6 +1311,7 @@ export default {
     //关闭发明人弹框
     closePatentInventor() {
       this.patentInventor = false
+      this.inventorMaterialFileList = []
       this.patentInventorItem = {
         inventorCtitle: '',
         inventorEtitle: '',
@@ -1339,6 +1346,10 @@ export default {
         this.patentInventorItem.invAddressEn = obj.invAddressEn
         this.patentInventorItem.inventorCountry = obj.inventorCountry
         this.patentInventorItem.inventorIdno = obj.inventorIdno
+        this.patentInventorItem.materialId = obj.materialId
+        this.patentInventorItem.address = obj.address
+        this.patentInventorItem.materialName = obj.materialName
+        this.inventorMaterialFileList = this.getInventorMaterialFileList(this.patentInventorItem)
       }
     },
     queryInventorList() {
@@ -1362,7 +1373,62 @@ export default {
         this.editContent.splice(index, 1)
       } else {
         this.patentInventor = true
+        this.inventorMaterialFileList = this.getInventorMaterialFileList(this.patentInventorItem)
         this.queryInventorList()
+      }
+    },
+    getInventorMaterialFileList(row) {
+      if (!row || !row.materialId) {
+        return []
+      }
+      return [{
+        name: row.materialName || row.name || row.address,
+        url: row.address ? `ipdoc${row.address}` : '',
+        materialId: row.materialId,
+        address: row.address,
+        materialName: row.materialName
+      }]
+    },
+    beforeInventorMaterialUpload(file) {
+      const maxSize = 50 * 1024 * 1024
+      if (file.size > maxSize) {
+        this.$message.error('文件大小不能超过50M')
+        return false
+      }
+      return true
+    },
+    onInventorMaterialSuccess(res, file) {
+      const material = res && res.data && res.data[0]
+      if (!material || !material.materialId) {
+        this.$message.error('上传失败，请重新上传')
+        this.inventorMaterialFileList = this.getInventorMaterialFileList(this.patentInventorItem)
+        return
+      }
+      this.$set(this.patentInventorItem, 'materialId', material.materialId)
+      this.$set(this.patentInventorItem, 'address', material.address)
+      this.$set(this.patentInventorItem, 'materialName', material.materialName || material.name || file.name)
+      this.inventorMaterialFileList = this.getInventorMaterialFileList(this.patentInventorItem)
+      this.$message.success('上传成功')
+    },
+    onInventorMaterialRemove(file) {
+      const materialId = file.materialId || (file.response && file.response.data && file.response.data[0] && file.response.data[0].materialId)
+      this.$set(this.patentInventorItem, 'materialId', '')
+      this.$set(this.patentInventorItem, 'address', '')
+      this.$set(this.patentInventorItem, 'materialName', '')
+      this.inventorMaterialFileList = []
+      if (materialId) {
+        deleteMaterial({ materialId }).then(res => {
+          this.$message.success(res.message || '删除成功')
+        })
+      }
+    },
+    onInventorMaterialExceed() {
+      this.$message.warning('证件材料只能上传一个文件，请先删除已有文件')
+    },
+    onInventorMaterialPreview(file) {
+      const address = file.address || (file.response && file.response.data && file.response.data[0] && file.response.data[0].address)
+      if (address) {
+        window.open(`ipdoc${address}`, '_blank')
       }
     },
     queryAddrByAppIds(appList) {
@@ -1920,7 +1986,7 @@ export default {
           // })
           queryFixedCompanies({
             custId: this.showData[this.editor.editorYIndex].custId,
-            appId: this.showData[this.editor.editorYIndex].patentCaseApplicationList[0] && this.showData[this.editor.editorYIndex].patentCaseApplicationList[0].appId
+            appIdArray: this.showData[this.editor.editorYIndex].patentCaseApplicationList[0] && this.showData[this.editor.editorYIndex].patentCaseApplicationList.map(j => j.appId)
           }).then(response => {
             this.invoiceTitleList = response.data
             // this.selectData.country = response.data;
