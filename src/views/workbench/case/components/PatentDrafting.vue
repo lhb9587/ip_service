@@ -76,7 +76,13 @@
           {{ patentWritingDetail.appCnName }}
         </el-form-item>
         <el-form-item label="时限类型:">
-          {{ patentWritingDetail.tltTypeName }}
+          <!-- {{ patentWritingDetail.tltTypeName }} -->
+            <el-select default-first-option :clearable='false' placeholder="请选择"
+              v-model="patentWritingDetail.tltTypeId" filterable
+              :disabled="dialogType === 'view'" @change="changeTltType">
+              <el-option v-for="item in caseTimeLimit" :key="item.tltTypeId" :label="item.typeName" :value="item.tltTypeId">
+              </el-option>
+            </el-select>
         </el-form-item>
       </el-row>
       <el-row style="border-bottom: 1px solid #EBEEF5">
@@ -98,7 +104,7 @@
       <el-table :data="patentWritingDetail.patentWritingProcessList" border style="width:100%" :height="300">
         <el-table-column label="流程类型" prop="taskName" width="120"></el-table-column>
         <el-table-column label="处理人" prop="fullname" width="100"></el-table-column>
-        <el-table-column label="退回原因" prop="ukeyName">
+        <el-table-column label="通过/退回原因" prop="ukeyName">
           <template slot-scope="scope">{{ scope.row.ukeyName || '-' }}</template>
         </el-table-column>
         <el-table-column label="处理状态" prop="processingResult" width="100">
@@ -112,19 +118,21 @@
         <el-table-column label="日期" prop="createTime" width="150">
           <template slot-scope="scope">{{ scope.row.createTime ? formatTime(scope.row.createTime) : '-' }}</template>
         </el-table-column>
-        <el-table-column label="五书版本" prop="materialName">
+        <el-table-column label="五书版本" prop="materialList">
           <template slot-scope="scope">
-            <span v-if="scope.row.materialName">
-              {{ scope.row.materialName }}
-              <i class="el-icon-download" style="cursor:pointer;color:#409EFF;margin-left:4px"
-                @click="downLoad(scope.row)"></i>
-            </span>
-            <span v-if="!scope.row.materialName && scope.row.processingResult !== '进行中'">-</span>
+            <div v-if="scope.row.materialList && scope.row.materialList.length">
+              <div v-for="(file, idx) in scope.row.materialList" :key="idx" style="display:flex;align-items:center;">
+                <span>{{ file.materialName }}</span>
+                <i class="el-icon-download" style="cursor:pointer;color:#409EFF;margin-left:4px"
+                  @click="downLoad(file)"></i>
+              </div>
+            </div>
+            <span v-else-if="scope.row.processingResult !== '进行中'">-</span>
             <el-upload v-if="scope.row.processingResult === '进行中' && dialogType !== 'view'" :show-file-list="false"
-              name="attachFile" :data="getUploadData()" :action="creatematerial" :before-upload="beforeUpload"
+              multiple name="attachFile" :data="getUploadData()" :action="creatematerial" :before-upload="beforeUpload"
               :on-success="(res) => onRowUploadSuccess(res, scope.row)">
               <div style="font-size:14px;cursor:pointer;color:#409EFF;margin-top:2px">
-                {{ scope.row.materialName ? '重新上传' : '上传' }}
+                上传
                 <i class="el-icon-upload2"></i>
               </div>
             </el-upload>
@@ -134,10 +142,18 @@
     </div>
     <div class="dialog-footer">
       <el-button @click="$emit('changeFalse')">取消</el-button>
+      <el-button v-if="dialogType == 'submit' || dialogType == 'create'" type="primary" @click="save">保存</el-button>
       <el-button v-if="dialogType == 'submit' || dialogType == 'create'" type="primary" @click="submit">提交</el-button>
-      <el-button v-if="dialogType == 'audit'" type="primary" @click="audit(1)">通过</el-button>
+      <el-button v-if="dialogType == 'audit'" type="primary" @click="openPassDialog">通过</el-button>
       <el-button v-if="dialogType == 'audit'" type="danger" @click="openBackDialog">退回</el-button>
     </div>
+    <el-dialog title="通过原因" :visible.sync="passReasonView" width="400px" append-to-body>
+      <el-input type="textarea" :rows="3" placeholder="请输入备注（选填）" v-model="passOpinion"></el-input>
+      <div slot="footer">
+        <el-button @click="passReasonView = false">取消</el-button>
+        <el-button type="primary" @click="doAudit(1)">确认通过</el-button>
+      </div>
+    </el-dialog>
     <el-dialog title="退回原因" :visible.sync="backReasonView" width="400px" append-to-body>
       <el-select style="width:100%" default-first-option clearable placeholder="请选择退回原因" v-model="backOpinions"
         filterable multiple>
@@ -156,7 +172,8 @@
 <script>
 import {
   delCaseMaterial,
-  queryUserByRoleId
+  queryUserByRoleId,
+  getCaseTimelimitList
 } from "@/api/caseList";
 import {
   queryPatentCaseInfo,
@@ -166,7 +183,8 @@ import {
   patentWritingappSubmit,
   queryPatentWritingDetail,
   patentWritingappExamine,
-  queryPatentWritingReturnReasonList
+  queryPatentWritingReturnReasonList,
+  savePatentWriting
 } from "@/api/patentWriting";
 
 import { creatematerial } from '@/api/ipServiceApi.config.js'
@@ -185,6 +203,7 @@ export default {
   },
   data() {
     return {
+      caseTimeLimit: [],
       reasonList: [],
       isActualAttorney: false,
       tableTitleList: [
@@ -203,22 +222,37 @@ export default {
       tableData: [{}],
       creatematerial,
       materialArray: [],
+      materialIdList: [],
       addAuditUserList: [],
       patentWritingId: null,
       patentWritingDetail: {
         rehearingUserId: '',
-        opinions: []
+        opinions: [],
+        tltTypeId: '',
+        abslimitDate: ''
       },
       backData: {},
       backReasonView: false,
-      backOpinions: []
+      backOpinions: [],
+      passReasonView: false,
+      passOpinion: ''
     }
   },
   created() {
     this.caseId && this.queryCaseInfo()
+    this.caseId && this.queryCaseTimeLimit()
     this.querySelect()
   },
   methods: {
+    changeTltType(value) {
+      const selected = this.caseTimeLimit.find(item => item.tltTypeId === value)
+      this.patentWritingDetail.abslimitDate = selected ? selected.abslimitDate : ''
+    },
+    queryCaseTimeLimit() {
+      getCaseTimelimitList({caseId: this.caseId[0], timelimitState: 1}).then(res => {
+        this.caseTimeLimit = res.data
+      })
+    },
     downLoad(data) {
       this.$message.success('正在下载')
       const url = data.address || data.url
@@ -254,8 +288,13 @@ export default {
       this.backOpinions = []
       this.backReasonView = true
     },
+    openPassDialog() {
+      this.passOpinion = ''
+      this.passReasonView = true
+    },
     doAudit(result) {
       this.backReasonView = false
+      this.passReasonView = false
       this.audit(result)
     },
     audit(result) {
@@ -264,10 +303,12 @@ export default {
         id: this.patentWritingId,
         caseId: this.caseId[0],
         rehearingUserId: this.patentWritingDetail.rehearingUserId,
-        opinions: result === 0 ? this.backOpinions : this.patentWritingDetail.opinions,
+        opinions: result === 0 ? this.backOpinions : (this.passOpinion ? [this.passOpinion] : []),
         audit: result,
-        materialId: this.materialId,
-        nullValueList: this.patentWritingDetail.nullValueList
+        materialIdList: this.materialIdList.length ? this.materialIdList : undefined,
+        nullValueList: this.patentWritingDetail.nullValueList,
+        tltTypeId: this.patentWritingDetail.tltTypeId || undefined,
+        abslimitDate: this.patentWritingDetail.abslimitDate || undefined
       }).then(res => {
         this.$message.success('操作成功')
         this.$emit('changeFalse', true)
@@ -305,11 +346,29 @@ export default {
         }
       })
     },
+    save() {
+      savePatentWriting({
+        id: this.patentWritingId,
+        rehearingUserId: this.patentWritingDetail.rehearingUserId || undefined,
+        materialIdList: this.materialIdList.length ? this.materialIdList : undefined,
+        tltTypeId: this.patentWritingDetail.tltTypeId || undefined,
+        abslimitDate: this.patentWritingDetail.abslimitDate || undefined
+      }).then(res => {
+        this.$message.success('保存成功')
+        this.$emit('changeFalse', true)
+      })
+    },
     submit() {
+      if (this.patentWritingDetail.independentWriter == 1 && this.patentWritingDetail.taskNo == 1 && !this.patentWritingDetail.rehearingUserId) {
+        this.$message.warning('请选择加审人')
+        return
+      }
       patentWritingappSubmit({
         id: this.patentWritingId,
         rehearingUserId: this.patentWritingDetail.rehearingUserId || undefined,
-        materialId: this.materialId || undefined
+        materialIdList: this.materialIdList.length ? this.materialIdList : undefined,
+        tltTypeId: this.patentWritingDetail.tltTypeId || undefined,
+        abslimitDate: this.patentWritingDetail.abslimitDate || undefined
       }).then(res => {
         this.$message.success('提交成功')
         this.$emit('changeFalse', true)
@@ -317,8 +376,11 @@ export default {
     },
     onRowUploadSuccess(res, row) {
       if (res.data && res.data[0]) {
-        this.$set(row, 'materialName', res.data[0].materialName)
-        this.materialId = res.data[0].materialId
+        if (!row.materialList) this.$set(row, 'materialList', [])
+        res.data.forEach(item => {
+          row.materialList.push(item)
+          this.materialIdList.push(item.materialId)
+        })
       }
     },
     beforeUpload() {

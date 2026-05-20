@@ -20,9 +20,9 @@
       <el-button size="small" type="primary" @click="doWriteTask('2,3')">
         审核
       </el-button>
-      <!-- <el-button size="small" type="primary" @click="rebookTask">
-        改签
-      </el-button> -->
+      <el-button size="small" type="danger" @click="delTask">
+        删除
+      </el-button>
       <el-form label-width="120px" 
                 @submit.native.prevent 
                 size="mini">
@@ -70,20 +70,6 @@
                      icon="el-icon-brush"></el-button>
         </div>
         <div class="brush_right export-action-wrap" style="top: -40px">
-          <!-- <el-dropdown>
-            <el-button type="primary" size="small">
-              撰写人当前案件数量<i class="el-icon-arrow-down el-icon--right"></i>
-            </el-button>
-            <el-dropdown-menu slot="dropdown">
-              <el-dropdown-item type="primary" size="small" @click.native="queryWriteCaseCount(1)">天津</el-dropdown-item>
-              <el-dropdown-item type="primary" size="small" @click.native="queryWriteCaseCount(2)">重庆</el-dropdown-item>
-            </el-dropdown-menu>
-          </el-dropdown> -->
-          <!-- <div style="cursor:pointer;display:flex;align-items:center;font-size: 14px;padding-right: 6px;margin-left: 10px">
-            <el-button type="text" @click="exportList(2)">导出</el-button>
-            <span style="color: #52A2F4;margin: 0 5px"> / </span>
-            <el-button type="text" @click="exportList(1)">全局导出</el-button>
-          </div> -->
         </div>
         <div>
           <AgGridVue
@@ -175,35 +161,6 @@
       </div>
     </el-dialog>
 
-    <!--   改签   -->
-    <el-dialog :close-on-click-modal="false" :show-close="false" :visible.sync="rebookView" title="改签" width="50%">
-      <div class="rebookDiv">
-        <div class="rebookTitle">确认要改签这些商标撰写吗？请指定您要改签的人</div>
-        <div class="rebookBody">
-          <div class="bodyRight">
-            <div class="rightTitle">设置改签人员</div>
-            <div class="rightSearch">
-              <el-input style="margin-top: 5px;margin-bottom:5px" v-model="name" v-debounce:searchName="'input',300" size="small" placeholder="搜索部门名称或人员姓名">
-                <template slot="prepend"><span class="el-icon-search"></span></template>
-              </el-input>
-            </div>
-            <div class="rightTable">
-              <el-table @row-click="rowClick" size="mini" :data="list" border fit empty-text="暂无数据"
-                        :row-class-name="rowClassName"
-                        current-row-key
-                        style="width: 100%;">
-                <el-table-column label="部门" prop="deptName"></el-table-column>
-                <el-table-column label="姓名" prop="fullname"></el-table-column>
-              </el-table>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="fl-ac-jc" style="padding: 20px 0">
-        <el-button size="small" @click="closeRebookDialog()">取 消</el-button>
-        <el-button size="small" type="primary" @click="submitRebook">确 定</el-button>
-      </div>
-    </el-dialog>
     <SelectOption :buss-id="bussId" v-if="selectionOptionState" :dialog-visible="selectionOptionState"
                   @cancel="closeSelect" :idArray="getCurrentRowsData('acId')"
                   :defaultMultipleSelect="preferenceList.map(i=>i.title)" :exportType="exportType"
@@ -216,13 +173,12 @@
   import vueChart from 'vue-echarts'
   import {
     checkPermission, deleteArticleApp,
-    delPreference, doArticleTask, endorseArticleCaseTasker,
-    queryArticleList,
-    queryPreference, queryZxCaseCount,
+    delPreference,
+    queryPreference,
     savePreference,
-    selectColumn, updateWorkHourTasker
+    selectColumn,
   } from "../../../../api/caseList";
-  import {queryPatentWritingList} from "@/api/patentWriting";
+  import {queryPatentWritingList, delePatentWriting} from "@/api/patentWriting";
   import headerSearch from '@/components/HeaderSearch'
   // import TrademarkWritingDetail from "./trademarkWritingDetail";
   import PatentDrafting from '@/views/workbench/case/components/PatentDrafting.vue';
@@ -368,6 +324,26 @@
       this.init()
     },
     methods: {
+      delTask() {
+        if (!this.getSelectedRows().length) {
+          this.$message.error("请先选择专利撰写！")
+          return
+        }
+        if (!this.getSelectedRows()[0].canDelete) {
+          this.$message.error('当前任务不可删除!')
+          return
+        }
+        this.$confirm('此操作将永久删除该任务, 是否继续?', '提示', {
+          confirmButtonText: '确定',
+          cancelButtonText: '取消',
+          type: 'warning'
+        }).then(() => {
+          delePatentWriting({id: this.getSelectedRows()[0].id}).then(res => {
+            this.$message.success('删除成功!')
+            this.closetrademarkWriting(true)
+          })
+        })
+      },
       handleClick(params) {
         this.isOutSearch = 1
         this.listQuery.pageNo = 1
@@ -396,105 +372,6 @@
         }
         return []
       },
-      submitRebook() {
-        if (!this.taskUserId) {
-          this.$message.error('请选择员工！')
-          return
-        }
-        endorseArticleCaseTasker({
-          endorseArticleList: this.getSelectedRows().map(item => ({
-            taskId: item.taskList && item.taskList[0] && item.taskList[0].taskId,
-            wfStatus: item.wfStatus,
-            caseId: item.caseId
-          })),
-          auditUserIds: [this.taskUserId],
-        }).then(res => {
-          this.$message.success('改签成功!')
-          this.closeRebookDialog()
-          this.queryList()
-        })
-      },
-      rebookTask() {
-        if (this.getSelectedRows().length < 1) {
-          this.$message.error('请先选择商标撰写')
-          return
-        }
-        const taskList = this.getTaskList()
-        if (taskList && !taskList.length) {
-          this.$message.error('您不是当前任务的任务人!')
-          return
-        }
-        this.rebookView = true
-      },
-      searchName(value) {
-        if (!value.target.value) return
-        this.taskUserId = ''
-        this.list = this.$store.getters.userList.filter(item => (item.deptName + '~' + item.fullname).includes(value.target.value))
-        if (this.list.length === 1) {
-          this.name = this.list[0].fullname
-          this.taskUserId = this.list[0].userId || ''
-        }
-      },
-      rowClassName({row, rowIndex}) {
-        if (row.userId == this.taskUserId) {
-          return 'currentClick'
-        }
-        return ''
-      },
-      rowClick(row) {
-        this.name = row.fullname
-        this.taskUserId = row.userId || ''
-      },
-      queryWriteCaseCount(guoji) {
-        queryZxCaseCount({
-          guoji
-        }).then(res => {
-          this.chartData = res.data
-          this.option = {
-            tooltip: {
-              trigger: "axis",
-              axisPointer: {
-                type: "shadow",
-              },
-            },
-            grid: {
-              left: "3%",
-              right: "4%",
-              bottom: "3%",
-              containLabel: true,
-            },
-            xAxis: [
-              {
-                type: "category",
-                data: res.data.map(item => item.fullname),
-                axisTick: {
-                  alignWithLabel: true,
-                },
-              },
-            ],
-            yAxis: [
-              {
-                type: "value",
-              },
-            ],
-            series: [
-              {
-                name: "Direct",
-                type: "bar",
-                barWidth: "40%",
-                data: res.data.map(item => item.count),
-                label: {
-                  show: true,
-                },
-                itemStyle: {
-                  color: '#73C0DE'
-                }
-              },
-            ],
-          }
-          this.writeCaseCountView = true
-        })
-      },
       closetrademarkWriting(flag) {
         this.patentWritingView = false
         this.atData = {}
@@ -507,18 +384,6 @@
         this.dialogId = this.atData.id
         this.taskNo = this.atData.taskList && this.atData.taskList[0] && this.atData.taskList[0].taskNo
         this.patentWritingView = true
-      },
-      getTaskList() {
-        return this.getSelectedRows().map(item => {
-          if (item.taskList && item.taskList.find(itm => itm.taskCandidates && itm.taskCandidates.includes(this.$store.getters.userId + ''))) {
-            return {
-              taskId: item.taskList.find(itm => itm.taskCandidates.includes(this.$store.getters.userId + '')).taskId,
-              taskNo: item.taskList.find(itm => itm.taskCandidates.includes(this.$store.getters.userId + '')).taskNo
-            }
-          } else {
-            return false
-          }
-        }).filter(item => !!item)
       },
       async doWriteTask(type) {
         if (!this.getSelectedRows().length) {
@@ -565,9 +430,6 @@
           default:
             break
         }
-      },
-      checkTaskUser() {
-
       },
       getSelectedRows() {
         if (this.gridApi) {

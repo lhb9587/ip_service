@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="tags-modal">
     <div v-if="showInline" class="tags-modal__inline">
       <div class="tags-modal__content" :class="{ 'is-empty': !caseTagCurrentPath }">
@@ -8,7 +8,7 @@
         <el-button
           type="primary"
           size="mini"
-          :disabled="caseTagSubmitting || !caseId || !caseTagCustAllow"
+          :disabled="caseTagSubmitting || !targetCaseIdList.length || !caseTagCustAllow"
           @click="openDialog"
         >
           设置标签
@@ -16,7 +16,7 @@
         <el-button
           size="mini"
           :disabled="caseTagSubmitting || !caseTagCurrentPath"
-          @click="clearSingleCaseTag"
+          @click="clearCaseTagAction"
         >
           清除
         </el-button>
@@ -330,25 +330,24 @@ export default {
       return params
     },
     batchUpdateCaseTag: function(node) {
+      const nextTagPath = (node && node.pathValue) || this.caseTagDraftValue || ''
       const params = {
         caseIdList: this.targetCaseIdList,
-        tagPath: (node && node.pathValue) || this.caseTagDraftValue || ''
+        tagPath: nextTagPath
       }
       this.caseTagSubmitting = true
       return batchUpdateCaseTag(params).then(res => {
         if (res && res.success === false) {
           throw new Error(res.message || '标签设置失败')
         }
+        this.caseTagValue = nextTagPath
+        this.caseTagCurrentPath = nextTagPath
         this.caseTagDraftValue = ''
         this.caseTagDraftNode = null
         this.$message.success((res && res.message) || '标签设置成功')
         this.getCaseTagTree()
         this.closeDialog(true)
-        this.$emit('change', {
-          batch: true,
-          caseIdList: this.targetCaseIdList.slice(),
-          response: res
-        })
+        this.$emit('change', nextTagPath)
         return res
       }).catch(err => {
         this.$message.error((err && err.message) || '标签设置失败')
@@ -403,6 +402,42 @@ export default {
         this.$emit('change', '')
       }).catch(err => {
         this.caseTagValue = this.caseTagCurrentPath
+        this.caseTagDraftValue = this.caseTagCurrentPath
+        this.$message.error((err && err.message) || '清除标签失败')
+      }).finally(() => {
+        this.caseTagSubmitting = false
+      })
+    },
+    clearCaseTagAction: function() {
+      if (this.caseTagSubmitting || !this.caseTagCurrentPath) {
+        return
+      }
+      if (this.isBatchMode) {
+        this.clearBatchCaseTag()
+        return
+      }
+      this.clearSingleCaseTag()
+    },
+    clearBatchCaseTag: function() {
+      if (!this.targetCaseIdList.length || this.caseTagSubmitting || !this.caseTagCurrentPath) {
+        return
+      }
+      this.caseTagSubmitting = true
+      batchUpdateCaseTag({
+        caseIdList: this.targetCaseIdList,
+        clearFlag: true
+      }).then(res => {
+        if (res && res.success === false) {
+          throw new Error(res.message || '清除标签失败')
+        }
+        this.caseTagValue = ''
+        this.caseTagCurrentPath = ''
+        this.caseTagDraftValue = ''
+        this.caseTagDraftNode = null
+        this.dialogVisible = false
+        this.$message.success((res && res.message) || '标签已清除')
+        this.$emit('change', '')
+      }).catch(err => {
         this.caseTagDraftValue = this.caseTagCurrentPath
         this.$message.error((err && err.message) || '清除标签失败')
       }).finally(() => {

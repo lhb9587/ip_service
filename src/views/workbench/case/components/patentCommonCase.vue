@@ -1156,7 +1156,7 @@
           </el-row>
           <el-row :class="[hideNewApp ? 'hideNewApp' : 'showNewApp']">
             <el-col :span="24">
-              <el-form-item label="是否需要优先权期限提醒:">
+              <el-form-item label="需要优先权期限提醒:">
                 <el-radio-group v-model="caseDetailFormData.applyExternally" style="margin-left: 10px">
                   <el-radio :label='1'>是</el-radio>
                   <el-radio :label='0'>否</el-radio>

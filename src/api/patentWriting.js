@@ -51,3 +51,19 @@ export function queryPatentWritingReturnReasonList(data) {
     data
   })
 }
+// 保存撰写
+export function savePatentWriting(data) {
+    return request({
+    url: serviceApi.savePatentWriting,
+    method: 'post',
+    data
+  })
+}
+// 删除撰写
+export function delePatentWriting(data) {
+    return request({
+    url: serviceApi.delePatentWriting,
+    method: 'post',
+    data
+  })
+}

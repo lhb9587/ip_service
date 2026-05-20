@@ -934,10 +934,10 @@
         colour: 0,
         priceLevel: 0,
         listQuery: {
-          pageSize: 10,
+          pageSize: 50,
           pageNo: 1
         },
-        pageSizesList: [10, 50, 100, 200, 300, 400, 500],
+        pageSizesList: [50, 100, 200, 300, 400, 500],
         total: 0,
         currentRowIndex: -1,
         title: '',
@@ -1226,10 +1226,10 @@
             otherFeeFirstClass: '',
             abroadGzFee: '',
             nterGzFee: '',
-            updateFlag1: 1,
-            updateFlag2: 1,
-            updateFlag3: 1,
-            updateFlag4: 1,
+            updateFlag1: 0,
+            updateFlag2: 0,
+            updateFlag3: 0,
+            updateFlag4: 0,
           }
         } else if (flag == 'edit') {
           this.currentRowIndex = index
@@ -1238,10 +1238,10 @@
           this.rowData = JSON.parse(JSON.stringify(row))
           this._prevPriceLevel = this.rowData.priceLevel
           this.rowData.custId = +this.rowData.custId
-          this.$set(this.rowData, 'updateFlag1', 1)
-          this.$set(this.rowData, 'updateFlag2', 1)
-          this.$set(this.rowData, 'updateFlag3', 1)
-          this.$set(this.rowData, 'updateFlag4', 1)
+          this.$set(this.rowData, 'updateFlag1', 0)
+          this.$set(this.rowData, 'updateFlag2', 0)
+          this.$set(this.rowData, 'updateFlag3', 0)
+          this.$set(this.rowData, 'updateFlag4', 0)
           if (this.rowData.custIdStr) {
             this.hzLists = [{
               label: this.rowData.custIdStr,
@@ -1257,10 +1257,10 @@
             this.title = '复制新建'
             this.rowData = res.data
             this._prevPriceLevel = this.rowData.priceLevel
-            this.$set(this.rowData, 'updateFlag1', 1)
-            this.$set(this.rowData, 'updateFlag2', 1)
-            this.$set(this.rowData, 'updateFlag3', 1)
-            this.$set(this.rowData, 'updateFlag4', 1)
+            this.$set(this.rowData, 'updateFlag1', 0)
+            this.$set(this.rowData, 'updateFlag2', 0)
+            this.$set(this.rowData, 'updateFlag3', 0)
+            this.$set(this.rowData, 'updateFlag4', 0)
             if (this.rowData.custIdStr) {
               this.hzLists = [{
                 label: this.rowData.custIdStr,

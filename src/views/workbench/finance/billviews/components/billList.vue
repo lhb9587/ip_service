@@ -1003,6 +1003,21 @@
       :close-on-press-escape="false">
       <bill-create :page-type="pageType" @billCreateDialog="billCreateDialog"></bill-create>
     </el-dialog>
+    <el-dialog
+      title="下载类型"
+      :visible.sync="downloadDialogVisible"
+      width="400px"
+      :close-on-click-modal="false"
+    >
+      <el-radio-group v-model="downloadType">
+        <el-radio label="pdf">PDF</el-radio>
+        <el-radio label="word">Word</el-radio>
+      </el-radio-group>
+      <span slot="footer" class="dialog-footer">
+        <el-button @click="downloadDialogVisible = false">取 消</el-button>
+        <el-button type="primary" :loading="downloadLoading" @click="confirmDownloadMaterialBatch">确 定</el-button>
+      </span>
+    </el-dialog>
   </div>
 </template>
 <script>
@@ -1109,6 +1124,9 @@ export default {
         balanceDate: this.$wUtil.getDate('', 'day')
       },
       dialogViewjy: false,
+      downloadDialogVisible: false,
+      downloadType: 'pdf',
+      downloadLoading: false,
       caseTypeId: '',
       judgeRank: '',
       identification: 'billListbill',
@@ -1373,12 +1391,21 @@ export default {
   },
   methods: {
     downloadMaterialBatch() {
+      this.downloadType = 'pdf'
+      this.downloadDialogVisible = true
+    },
+    confirmDownloadMaterialBatch() {
+      this.downloadLoading = true
       downloadMaterialBatch({
-        billIdList: this.getSelectedRows().map(item => item.billId)
+        billIdList: this.getSelectedRows().map(item => item.billId),
+        downloadType: this.downloadType
       }).then(res => {
+        this.downloadDialogVisible = false
         this.$commonUtils.downLoadAll({
           url: `ipdoc${res.data}`
         })
+      }).finally(() => {
+        this.downloadLoading = false
       })
     },
     getCurrentRowsData() {

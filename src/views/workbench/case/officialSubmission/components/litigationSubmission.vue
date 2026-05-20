@@ -935,7 +935,7 @@
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row v-if="reportMatter == '意见陈述' || (reportMatter == '主动修改' && submitData.mdType === '意见陈述')">
+      <el-row v-if="reportMatter == '复审请求' || reportMatter == '意见陈述' || (reportMatter == '主动修改' && submitData.mdType === '意见陈述')">
         <el-col :span="24">
           <el-form-item label="关于补交实验数据的情况:">
             <span v-if="submitData.bjlsysjbj == 1">
@@ -3756,7 +3756,7 @@
           </el-form-item>
         </el-col>
       </el-row>
-      <el-row v-if="reportMatter == '意见陈述' || (reportMatter == '主动修改' && submitData.mdType === '意见陈述')">
+      <el-row v-if="reportMatter == '复审请求' || reportMatter == '意见陈述' || (reportMatter == '主动修改' && submitData.mdType === '意见陈述')">
         <el-col :span="24" >
           <el-form-item label="关于补交实验数据的情况:" style="display: flex;align-items: center;" prop="bjlsysjbj">
             <el-checkbox style="margin-bottom: 0px;" :true-label="1" :false-label="0" v-model="submitData.bjlsysjbj">补交了实验数据</el-checkbox>

@@ -268,6 +268,8 @@
                               <el-form-item class="postInfo-container-item" label="标签:">
                                 <TagsModal
                                   :case-id="caseDetailFoemData.caseId"
+                                  :batch-mode="$route.query.operate === 'many'"
+                                  :case-id-list="mainCaseIds"
                                   :cust-id="caseDetailFoemData.custId"
                                   :case-tag-info="{ tagPath: tagPath, tagPathList: caseDetailFoemData.caseTagPathList }"
                                   @change="tagPath = $event"

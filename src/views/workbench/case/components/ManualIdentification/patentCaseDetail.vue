@@ -761,7 +761,7 @@
           </el-row>
           <el-row>
             <el-col :span="24">
-              <el-form-item label="是否需要优先权期限提醒:">
+              <el-form-item label="需要优先权期限提醒:">
                 {{caseDetailFormData.applyExternally ? '是' : '否'}}
               </el-form-item>
             </el-col>
@@ -1167,7 +1167,7 @@
           </el-row>
           <el-row>
             <el-col :span="24">
-              <el-form-item label="是否需要优先权期限提醒:">
+              <el-form-item label="需要优先权期限提醒:">
                 {{caseDetailFormData.applyExternally ? '是' : '否'}}
               </el-form-item>
             </el-col>
@@ -2492,7 +2492,7 @@
           </el-row>
           <el-row>
             <el-col :span="24">
-              <el-form-item label="是否需要优先权期限提醒:">
+              <el-form-item label="需要优先权期限提醒:">
                 {{caseDetailFormData.applyExternally ? '是' : '否'}}
               </el-form-item>
             </el-col>

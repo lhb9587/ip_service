@@ -80,10 +80,14 @@ export default {
   props:['transfromState','transfromType', 'multipleSelection'],
   watch:{
     transfromState(n){
+      if (this.multipleSelection && this.multipleSelection.length && this.multipleSelection.every(item => item.pageId === 501)) {
+        this.include = 0
+      }
       n&&(this.queryDeliver(), this.queryTaskDefine())
     }
   },
   created() {
+    
   },
   data(){
     return {

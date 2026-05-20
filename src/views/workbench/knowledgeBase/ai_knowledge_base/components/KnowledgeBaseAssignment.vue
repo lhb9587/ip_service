@@ -65,27 +65,35 @@
             {{ scope.row.kb_name }}
           </template>
         </el-table-column>
-        <el-table-column label="上传文件权限">
+        <el-table-column label="可管理知识库">
           <template slot-scope="scope">
-            <el-radio-group v-model="scope.row.upPermission">
+            <el-radio-group v-model="scope.row.canManageKb">
               <el-radio :label="1">有</el-radio>
               <el-radio :label="0">无</el-radio>
             </el-radio-group>
           </template>
         </el-table-column>
-        <el-table-column label="删除文件权限">
+        <el-table-column label="可查看知识库">
           <template slot-scope="scope">
-            <el-radio-group v-model="scope.row.delPermission">
+            <el-radio-group v-model="scope.row.canViewKb">
               <el-radio :label="1">有</el-radio>
               <el-radio :label="0">无</el-radio>
             </el-radio-group>
           </template>
         </el-table-column>
-        <el-table-column label="勾选状态" width="160px">
+        <el-table-column label="可用于对话">
           <template slot-scope="scope">
-            <el-radio-group v-model="scope.row.ucheck">
-              <el-radio :label="1">选中</el-radio>
-              <el-radio :label="0">未选</el-radio>
+            <el-radio-group v-model="scope.row.canUseInChat">
+              <el-radio :label="1">有</el-radio>
+              <el-radio :label="0">无</el-radio>
+            </el-radio-group>
+          </template>
+        </el-table-column>
+        <el-table-column label="可查看匹配详情" width="160px">
+          <template slot-scope="scope">
+            <el-radio-group v-model="scope.row.canViewMatchDetail">
+              <el-radio :label="1">有</el-radio>
+              <el-radio :label="0">无</el-radio>
             </el-radio-group>
           </template>
         </el-table-column>
@@ -127,9 +135,10 @@ export default {
             this.transferValue.push(item.kb_id)
             const kblib = this.userKblibList.find(value => value.kb_id === item.kb_id);
             if (kblib) {
-              kblib.upPermission = item.upPermission;
-              kblib.delPermission = item.delPermission;
-              kblib.ucheck = item.ucheck;
+              kblib.canManageKb = item.canManageKb;
+              kblib.canViewKb = item.canViewKb;
+              kblib.canUseInChat = item.canUseInChat;
+              kblib.canViewMatchDetail = item.canViewMatchDetail;
             }
           });
         })
@@ -148,9 +157,10 @@ export default {
           this.userKblibList.push({
             kb_id: item.kb_id,
             kb_name: item.kb_name,
-            upPermission: 0,
-            delPermission: 0,
-            ucheck: 0
+            canManageKb: 0,
+            canViewKb: 0,
+            canUseInChat: 0,
+            canViewMatchDetail: 0
           })
         })
       })

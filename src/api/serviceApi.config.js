@@ -19,6 +19,8 @@ const SYS_URL13 = '/ai_write/'
 const SYS_URL14 = '/ip_site/interface/'
 
 const URL_Tem = {
+  delePatentWriting: SYS_URL1 + 'patentWriting/delePatentWriting',
+  savePatentWriting: SYS_URL1 + 'patentWriting/savePatentWriting',
   queryPatentWritingReturnReasonList: SYS_URL1 + 'patentWriting/queryPatentWritingReturnReasonList',
   patentWritingappExamine: SYS_URL1 + 'patentWriting/patentWritingappExamine',
   queryPatentWritingList: SYS_URL1 + 'patentWriting/queryPatentWritingList',

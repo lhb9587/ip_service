@@ -26,7 +26,7 @@ let data =[{
     caseType:'异议', list:[{title:'案件文号',type:'agentNum'},{title:'案件类型',type:'caseType'},{title:'客户',type:'custName'},{title:'申请人',type:'appCnName'},{title:'被异议人',type:'respondentNameCn'},{title:'商标名称',type:'tmName'},{title:'商标图样',type:'imageFile'},{title:'初审公告号',type:'approvalNo'},{title:'初审公告日期',type:'approvalDate'},{title:'初审公告期号',type:'approvalNumber'},{title:'类别',type:'goodClasses'}	]
   },
   {
-    caseType:'异议答辩', list:[{title:'案件文号',type:'agentNum'},{title:'案件类型',type:'caseType'},{title:'客户',type:'custName'},{title:'申请人',type:'appCnName'},{title:'异议人',type:'appCnName'},{title:'商标名称',type:'tmName'},{title:'商标图样',type:'imageFile'},{title:'初审公告号',type:'approvalNo'},{title:'初审公告日期',type:'approvalDate'},{title:'初审公告期号',type:'approvalNumber'},{title:'类别',type:'goodClasses'}	]
+    caseType:'异议答辩', list:[{title:'案件文号',type:'agentNum'},{title:'案件类型',type:'caseType'},{title:'客户',type:'custName'},{title:'申请人',type:'appCnName'},{title:'异议人',type:'respondentNameCn'},{title:'商标名称',type:'tmName'},{title:'商标图样',type:'imageFile'},{title:'初审公告号',type:'approvalNo'},{title:'初审公告日期',type:'approvalDate'},{title:'初审公告期号',type:'approvalNumber'},{title:'类别',type:'goodClasses'}	]
   },
   {
     caseType:[ '注册驳回复审','国际注册驳回复审'], list:[{title:'案件文号',type:'agentNum'},{title:'案件类型',type:'caseType'},{title:'客户',type:'custName'},{title:'申请人',type:'appCnName'},{title:'原商标申请号/国际注册号',type:'regNumber'},{title:'商标名称',type:'tmName'},{title:'商标图样',type:'imageFile'},{title:'官方发文编号',type:'tmOfficeNumber'},{title:'官文时限基准日期',type:'docDate'},{title:'类别',type:'goodClasses'}]
