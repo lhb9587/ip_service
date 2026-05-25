@@ -557,9 +557,9 @@
               <template v-else-if="scope.row.rowKind === 'workOverview'">
                 <span class="assess-content-label">情况概述（个人填写）</span>
               </template>
-              <template v-else>
+              <template v-else-if="scope.row.rowKind === 'assess'">
                 <div class="assess-element-cell">
-                  <span v-if="assessData[scope.row._sourceIndex].assessContentLabel" class="assess-content-label">{{ assessData[scope.row._sourceIndex].assessContentLabel }}</span>
+                  <span class="assess-content-label">{{ assessData[scope.row._sourceIndex].assessContentLabel }}</span>
                   <span>{{ assessData[scope.row._sourceIndex].element }}</span>
                 </div>
               </template>
@@ -604,7 +604,7 @@
           >
             <template slot-scope="scope">
               <div
-                v-if="isOverallStandardFirstRowThree(scope.$index) && scope.row.rowKind !== 'comment'"
+                v-if="isOverallStandardFirstRowThree(scope.$index)"
                 class="overall-standard"
               >
                 <p v-for="(line, idx) in overallEvaluationStandard" :key="idx">{{ line }}</p>
@@ -2484,9 +2484,19 @@ export default {
       this._summaryEvalVmThree.$mount()
       selectCell.appendChild(this._summaryEvalVmThree.$el)
     },
-    parseAssessContentLabelThree(element) {
+    getAssessLabelPrefixThree(performType) {
+      return Number(performType) === 2 ? '考核要素' : '考核内容'
+    },
+    parseAssessContentLabelThree(element, performType) {
       const text = (element || '').trim()
-      if (!text.startsWith('考核内容')) {
+      const prefix = performType != null
+        ? this.getAssessLabelPrefixThree(performType)
+        : null
+      const tryPrefixes = prefix
+        ? [prefix]
+        : ['考核内容', '考核要素']
+      const matchedPrefix = tryPrefixes.find(p => text.startsWith(p))
+      if (!matchedPrefix) {
         return { label: '', element: text }
       }
       const lines = text.split('\n')
@@ -2508,7 +2518,7 @@ export default {
           continue
         }
         if (item.performType === 2) {
-          const parsed = this.parseAssessContentLabelThree(item.element)
+          const parsed = this.parseAssessContentLabelThree(item.element, 2)
           result.push({
             performType: 2,
             assessContentLabel: parsed.label || item.assessContentLabel || '',
@@ -2543,7 +2553,7 @@ export default {
             i++
             continue
           }
-          const parsed = this.parseAssessContentLabelThree(item.element)
+          const parsed = this.parseAssessContentLabelThree(item.element, 1)
           const label = parsed.label || workLabels[workIndex] || `考核内容${workIndex + 1}`
           let performTypeDesc = item.performTypeDesc || ''
           if (
@@ -2574,9 +2584,7 @@ export default {
       return result
     },
     isOverallStandardFirstRowThree(rowIndex) {
-      return this.tableDisplayDataThree.findIndex(
-        row => row.rowKind === 'workAssess' || row.rowKind === 'assess'
-      ) === rowIndex
+      return rowIndex === 0
     },
     // 获取考核内容
     queryPersonPerformanceTemp(row){
@@ -2643,17 +2651,11 @@ export default {
           return { rowspan: _row, colspan: _col }
         }
         if (columnIndex === 4) {
-          if (row.rowKind === 'workOverview' || row.rowKind === 'comment') {
-            return [0, 0]
-          }
-          const spanCount = this.tableDisplayDataThree.filter(
-            r => r.rowKind !== 'comment'
-          ).length
-          if (
-            (row.rowKind === 'workAssess' || row.rowKind === 'assess') &&
-            this.isOverallStandardFirstRowThree(rowIndex)
-          ) {
-            return { rowspan: spanCount, colspan: 1 }
+          if (this.isOverallStandardFirstRowThree(rowIndex)) {
+            return {
+              rowspan: this.tableDisplayDataThree.length,
+              colspan: 1
+            }
           }
           return { rowspan: 0, colspan: 0 }
         }

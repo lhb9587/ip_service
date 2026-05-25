@@ -60,9 +60,9 @@
             <template v-else-if="scope.row.rowKind === 'workOverview'">
               <span class="assess-content-label">情况概述（个人填写）</span>
             </template>
-            <template v-else>
+            <template v-else-if="scope.row.rowKind === 'assess'">
               <div class="assess-element-cell">
-                <span v-if="assessData[scope.row._sourceIndex].assessContentLabel" class="assess-content-label">{{ assessData[scope.row._sourceIndex].assessContentLabel }}</span>
+                <span class="assess-content-label">{{ assessData[scope.row._sourceIndex].assessContentLabel }}</span>
                 <el-input
                   type="textarea"
                   :autosize="{ minRows: 2, maxRows: 4 }"
@@ -99,7 +99,15 @@
           width="120"
         >
           <template slot-scope="scope">
-            <el-input v-model="scope.row.weight" type="number"></el-input>
+            <div
+              v-if="scope.row.rowKind === 'workAssess' || scope.row.rowKind === 'assess'"
+              class="weight-cell"
+            >
+              <el-input
+                v-model="assessData[scope.row._sourceIndex].weight"
+                type="number"
+              />
+            </div>
           </template>
         </el-table-column>
         <el-table-column
@@ -122,7 +130,7 @@
         >
           <template slot-scope="scope">
             <div
-              v-if="isOverallStandardFirstRow(scope.$index) && scope.row.rowKind !== 'comment'"
+              v-if="isOverallStandardFirstRow(scope.$index)"
               class="overall-standard"
             >
               <p v-for="(line, idx) in overallEvaluationStandard" :key="idx">{{ line }}</p>
@@ -171,8 +179,6 @@ const STANDARD_PROFESSIONAL = `优秀：职业精神突出，主动协作，团�
 称职：基本具备职业精神，能完成协作要求
 待改进：职业精神不足，协作意识有待加强
 不合格：缺乏职业精神，严重影响团队协作`
-
-const WORK_TASK_LABELS = ['考核内容1', '考核内容2']
 
 export default {
   name: 'AssessThreeContent',
@@ -294,26 +300,40 @@ export default {
         item => this.normalizePerformType(item.performType) === type
       ).length > 1
     },
-    getNextAssessContentLabel(performType) {
-      const type = this.normalizePerformType(performType)
-      const items = this.assessData.filter(
-        item => this.normalizePerformType(item.performType) === type
-      )
-      let maxNum = 0
-      items.forEach(item => {
-        const match = (item.assessContentLabel || '').match(/考核内容(\d+)/)
-        if (match) {
-          maxNum = Math.max(maxNum, parseInt(match[1], 10))
-        }
+    isAssessContentItem(item) {
+      const type = this.normalizePerformType(item.performType)
+      return type === 1 || type === 2
+    },
+    parseAssessContentNum(label) {
+      const match = (label || '').match(/考核内容(\d+)/)
+      return match ? parseInt(match[1], 10) : 0
+    },
+    applySequentialAssessContentLabels(assessData) {
+      let seq = 1
+      assessData.forEach(item => {
+        if (!this.isAssessContentItem(item)) return
+        item.assessContentLabel = `考核内容${seq}`
+        seq++
       })
-      return `考核内容${maxNum + 1}`
+    },
+    resolveAssessContentLabel(parsedLabel, existingLabel, nextNum) {
+      const candidates = [parsedLabel, existingLabel].filter(Boolean)
+      for (const candidate of candidates) {
+        const n = this.parseAssessContentNum(candidate)
+        if (n >= nextNum.num) {
+          nextNum.num = Math.max(nextNum.num, n + 1)
+          return candidate
+        }
+      }
+      const label = `考核内容${nextNum.num}`
+      nextNum.num++
+      return label
     },
     createDefaultItem(performType) {
       const type = this.normalizePerformType(performType)
       if (type === 1) {
         return {
           performType: 1,
-          assessContentLabel: this.getNextAssessContentLabel(1),
           element: '',
           standard: '',
           weight: 0,
@@ -323,7 +343,6 @@ export default {
       if (type === 2) {
         return {
           performType: 2,
-          assessContentLabel: this.getNextAssessContentLabel(2),
           element: '',
           standard: '',
           weight: 0
@@ -334,12 +353,39 @@ export default {
         element: ''
       }
     },
+    getTableBodyScrollTop() {
+      const tableRef = this.$refs.table
+      if (!tableRef || !tableRef.$el) return 0
+      const bodyWrapper = tableRef.$el.querySelector('.el-table__body-wrapper')
+      return bodyWrapper ? bodyWrapper.scrollTop : 0
+    },
+    setTableBodyScrollTop(scrollTop) {
+      const tableRef = this.$refs.table
+      if (!tableRef || !tableRef.$el) return
+      const bodyWrapper = tableRef.$el.querySelector('.el-table__body-wrapper')
+      if (bodyWrapper) {
+        bodyWrapper.scrollTop = scrollTop
+      }
+    },
+    updateTableLayout() {
+      this.$nextTick(() => {
+        const tableRef = this.$refs.table
+        if (tableRef) {
+          tableRef.doLayout()
+        }
+        this.mountSummaryEvaluation()
+      })
+    },
     refreshTable() {
+      const scrollTop = this.getTableBodyScrollTop()
       this.isTable = false
       this.$nextTick(() => {
         this.isTable = true
         this.$nextTick(() => {
           this.mountSummaryEvaluation()
+          this.$nextTick(() => {
+            this.setTableBodyScrollTop(scrollTop)
+          })
         })
       })
     },
@@ -359,12 +405,17 @@ export default {
         }
       }
       assessData.splice(insertAt, 0, newItem)
+      this.applySequentialAssessContentLabels(assessData)
       this.assessData = assessData
-      this.refreshTable()
+      this.updateTableLayout()
     },
     handleDelete(sourceIndex) {
+      const deleted = this.assessData[sourceIndex]
       this.assessData.splice(sourceIndex, 1)
-      this.refreshTable()
+      if (deleted && this.isAssessContentItem(deleted)) {
+        this.applySequentialAssessContentLabels(this.assessData)
+      }
+      this.updateTableLayout()
     },
     buildDisplayRows(items) {
       const rows = []
@@ -382,9 +433,11 @@ export default {
       })
       return rows
     },
-    parseAssessContentLabel(element) {
+    parseAssessContentLabel(element, performType) {
       const text = (element || '').trim()
-      if (!text.startsWith('考核内容')) {
+      const tryPrefixes = ['考核内容', '考核要素']
+      const matchedPrefix = tryPrefixes.find(p => text.startsWith(p))
+      if (!matchedPrefix) {
         return { label: '', element: text }
       }
       const lines = text.split('\n')
@@ -395,7 +448,7 @@ export default {
     normalizePerformItems(items) {
       const sorted = [...items].sort((a, b) => a.performType - b.performType)
       const result = []
-      let workIndex = 0
+      const nextNum = { num: 1 }
       let i = 0
       while (i < sorted.length) {
         const item = sorted[i]
@@ -408,10 +461,15 @@ export default {
           continue
         }
         if (item.performType === 2) {
-          const parsed = this.parseAssessContentLabel(item.element)
+          const parsed = this.parseAssessContentLabel(item.element, 2)
+          const label = this.resolveAssessContentLabel(
+            parsed.label,
+            item.assessContentLabel,
+            nextNum
+          )
           result.push({
             performType: 2,
-            assessContentLabel: parsed.label || item.assessContentLabel || '',
+            assessContentLabel: label,
             element: parsed.label ? parsed.element : item.element || '',
             standard: item.standard || '',
             weight: item.weight
@@ -423,14 +481,17 @@ export default {
           if (item.assessContentLabel) {
             result.push({
               performType: 1,
-              assessContentLabel: item.assessContentLabel,
+              assessContentLabel: this.resolveAssessContentLabel(
+                '',
+                item.assessContentLabel,
+                nextNum
+              ),
               element: item.element || '',
               standard: item.standard || '',
               weight: item.weight,
               performTypeDesc: item.performTypeDesc || ''
             })
             i++
-            workIndex++
             continue
           }
           const isOverview =
@@ -443,8 +504,12 @@ export default {
             i++
             continue
           }
-          const parsed = this.parseAssessContentLabel(item.element)
-          const label = parsed.label || WORK_TASK_LABELS[workIndex] || `考核内容${workIndex + 1}`
+          const parsed = this.parseAssessContentLabel(item.element, 1)
+          const label = this.resolveAssessContentLabel(
+            parsed.label,
+            '',
+            nextNum
+          )
           let performTypeDesc = item.performTypeDesc || ''
           if (
             i + 1 < sorted.length &&
@@ -466,7 +531,6 @@ export default {
             weight: item.weight,
             performTypeDesc
           })
-          workIndex++
           continue
         }
         i++
@@ -474,9 +538,7 @@ export default {
       return result
     },
     isOverallStandardFirstRow(rowIndex) {
-      return this.tableDisplayData.findIndex(
-        row => row.rowKind === 'workAssess' || row.rowKind === 'assess'
-      ) === rowIndex
+      return rowIndex === 0
     },
     queryPersonPerformanceTemp() {
       queryPersonPerformanceTemp({ talentCode: this.talentCode }).then(res => {
@@ -546,17 +608,11 @@ export default {
         return { rowspan: _row, colspan: _col }
       }
       if (columnIndex === 5) {
-        if (row.rowKind === 'workOverview' || row.rowKind === 'comment') {
-          return [0, 0]
-        }
-        const spanCount = this.tableDisplayData.filter(
-          r => r.rowKind !== 'comment'
-        ).length
-        if (
-          (row.rowKind === 'workAssess' || row.rowKind === 'assess') &&
-          this.isOverallStandardFirstRow(rowIndex)
-        ) {
-          return { rowspan: spanCount, colspan: 1 }
+        if (this.isOverallStandardFirstRow(rowIndex)) {
+          return {
+            rowspan: this.tableDisplayData.length,
+            colspan: 1
+          }
         }
         return { rowspan: 0, colspan: 0 }
       }
