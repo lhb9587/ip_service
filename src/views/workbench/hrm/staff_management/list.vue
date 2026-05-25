@@ -171,6 +171,18 @@
     >
       <AssessTwoContent v-if="assessTwoVisible" :talent-code="assessTalentCode" @clearAssess="assessTwoVisible = false"></AssessTwoContent>
     </el-dialog>
+
+    <el-dialog
+      title="设置考核内容-3"
+      :visible.sync="assessThreeVisible"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :fullscreen="true"
+      width="80%"
+      @close="assessThreeVisible = false"
+    >
+      <AssessThreeContent v-if="assessThreeVisible" :talent-code="assessTalentCode" @clearAssess="assessThreeVisible = false"></AssessThreeContent>
+    </el-dialog>
   </div>
 </template>
 
@@ -183,6 +195,7 @@ import Summary from "@/components/Summary/index.js";
 import headerSearch from '@/components/HeaderSearch';
 import AssessContent from './components/AssessContent';
 import AssessTwoContent from './components/AssessTwoContent';
+import AssessThreeContent from './components/AssessThreeContent';
 export default {
   name: 'staff_management',
   data() {
@@ -296,6 +309,7 @@ export default {
       cascaderLable: '',
       assessVisible: false,
       assessTwoVisible: false,
+      assessThreeVisible: false,
       assessTalentCode: '',
       // receiverUserList:[],
       // searchType:'',
@@ -518,9 +532,11 @@ export default {
     },
     setAssessContent(row) {
       this.assessTalentCode = row.talentCode
-      if (row.performanceType == 1){
+      if (row.performanceType == 1) {
         this.assessVisible = true
-      }else{
+      } else if (row.performanceType == 3) {
+        this.assessThreeVisible = true
+      } else {
         this.assessTwoVisible = true
       }
     },
@@ -1007,7 +1023,8 @@ export default {
     SelectOption,
     headerSearch,
     AssessContent,
-    AssessTwoContent
+    AssessTwoContent,
+    AssessThreeContent
   }
 }
 </script>

@@ -510,7 +510,129 @@
           </el-table-column>
         </el-table>
       </div>
-      <div v-else>
+      <div class="assess-div" v-else-if="formData.performanceType === 3">
+        <el-table
+          class="assess-table"
+          :data="tableDisplayDataThree"
+          :span-method="objectSpanMethod"
+          show-summary
+          :summary-method="getSummariesThree"
+          border
+          height="790px"
+        >
+          <el-table-column
+            prop="performType"
+            label="考核维度及总占比"
+            width="160"
+          >
+            <template slot-scope="scope">
+              <div style="text-align: center;font-weight: bold">
+                {{ performThreeTypes[assessData[scope.row._sourceIndex].performType] }}
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="element"
+            label="考核要素"
+            min-width="200"
+          >
+            <template slot-scope="scope">
+              <template v-if="scope.row.rowKind === 'comment'">
+                <el-input
+                  v-if="performStatus != 1 && formData.userId != $store.getters.userId && $store.getters.permissions.includes(299)"
+                  type="textarea"
+                  :autosize="{ minRows: 3, maxRows: 6 }"
+                  v-model="assessData[scope.row._sourceIndex].element"
+                  placeholder="点评: (上级填写)"
+                />
+                <span v-else>{{ assessData[scope.row._sourceIndex].element }}</span>
+              </template>
+              <template v-else-if="scope.row.rowKind === 'workAssess'">
+                <div class="assess-element-cell">
+                  <span class="assess-content-label">{{ assessData[scope.row._sourceIndex].assessContentLabel }}</span>
+                  <span>{{ assessData[scope.row._sourceIndex].element }}</span>
+                </div>
+              </template>
+              <template v-else-if="scope.row.rowKind === 'workOverview'">
+                <span class="assess-content-label">情况概述（个人填写）</span>
+              </template>
+              <template v-else>
+                <div class="assess-element-cell">
+                  <span v-if="assessData[scope.row._sourceIndex].assessContentLabel" class="assess-content-label">{{ assessData[scope.row._sourceIndex].assessContentLabel }}</span>
+                  <span>{{ assessData[scope.row._sourceIndex].element }}</span>
+                </div>
+              </template>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="standard"
+            label="考核标准"
+            min-width="320"
+          >
+            <template slot-scope="scope">
+              <span
+                v-if="scope.row.rowKind === 'workAssess' || scope.row.rowKind === 'assess'"
+                style="white-space: pre-line"
+              >{{ assessData[scope.row._sourceIndex].standard }}</span>
+              <template v-else-if="scope.row.rowKind === 'workOverview'">
+                <el-input
+                  v-if="formData.userId == $store.getters.userId && performStatus != 1"
+                  type="textarea"
+                  :autosize="{ minRows: 2, maxRows: 6 }"
+                  v-model="assessData[scope.row._sourceIndex].performTypeDesc"
+                />
+                <span v-else style="white-space: pre-line">{{ assessData[scope.row._sourceIndex].performTypeDesc }}</span>
+              </template>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="weight"
+            label="权重"
+            width="120"
+          >
+            <template slot-scope="scope">
+              <div
+                v-if="scope.row.rowKind === 'workAssess' || scope.row.rowKind === 'assess'"
+                class="weight-cell"
+              >{{ assessData[scope.row._sourceIndex].weight }}</div>
+            </template>
+          </el-table-column>
+          <el-table-column
+            label="整体评定标准"
+            width="200"
+          >
+            <template slot-scope="scope">
+              <div
+                v-if="isOverallStandardFirstRowThree(scope.$index) && scope.row.rowKind !== 'comment'"
+                class="overall-standard"
+              >
+                <div class="overall-standard-list">
+                  <p v-for="(line, idx) in overallEvaluationStandard" :key="idx">{{ line }}</p>
+                </div>
+                <div class="monthly-evaluation-footer">
+                  <span class="monthly-evaluation-label">本月评定：</span>
+                  <el-select
+                    v-if="performStatus != 1 && formData.userId != $store.getters.userId && $store.getters.permissions.includes(299)"
+                    v-model="evaluationStandard"
+                    placeholder="请选择"
+                    clearable
+                    style="width: 100%"
+                  >
+                    <el-option
+                      v-for="item in evaluationStandardOptions"
+                      :key="item"
+                      :label="item"
+                      :value="item"
+                    />
+                  </el-select>
+                  <span v-else>{{ evaluationStandard || '—' }}</span>
+                </div>
+              </div>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      <div v-else-if="formData.performanceType === 2">
         <div class="assess-div">
           <el-table
             :data="assessTwoData"
@@ -686,6 +808,18 @@
     >
       <AssessTwoContent v-if="setAssessTwoVisible" :talent-code="formData.talentCode" @clearAssess="setAssessTwoVisible = false"></AssessTwoContent>
     </el-dialog>
+
+    <el-dialog
+      title="设置考核内容-3"
+      :visible.sync="setAssessThreeVisible"
+      :close-on-click-modal="false"
+      :close-on-press-escape="false"
+      :fullscreen="true"
+      width="80%"
+      @close="setAssessThreeVisible = false"
+    >
+      <AssessThreeContent v-if="setAssessThreeVisible" :talent-code="formData.talentCode" @clearAssess="setAssessThreeVisible = false"></AssessThreeContent>
+    </el-dialog>
   </div>
 </template>
 
@@ -695,6 +829,7 @@ import { queryTalentPersonInfo, queryPositions, queryOrganizations, upsertTalent
 import { getToken } from "@/utils/auth";
 import AssessContent from './AssessContent';
 import AssessTwoContent from './AssessTwoContent';
+import AssessThreeContent from './AssessThreeContent';
 import ScoringDetail from './ScoringDetail';
 export default {
   name: 'growth_profile',
@@ -727,6 +862,16 @@ export default {
       assessVisible: false, // 考核
       setAssessVisible: false, // 设置考核
       setAssessTwoVisible: false, // 设置考核2
+      setAssessThreeVisible: false, // 设置考核3
+      evaluationStandard: '',
+      evaluationStandardOptions: ['优秀', '良好', '称职', '待改进', '不合格'],
+      overallEvaluationStandard: [
+        '优秀，绩效工资按120%发放',
+        '良好，绩效工资按100%发放',
+        '称职，绩效工资按100%发放',
+        '待改进，绩效工资按80%发放',
+        '不合格，绩效工资按0%发放'
+      ],
       assessMessage: '', // 考核标题
       assessInfo: '', // 考核信息
       updatePerformList: false, // 考核更新id，判断是否需要手动更新
@@ -747,6 +892,11 @@ export default {
         1: '工作任务(90%)',
         2: '综合评价(10%)',
         3: '浮动部分(5%)'
+      },
+      performThreeTypes: {
+        1: '工作任务(70%)',
+        2: '其他评价(30%)',
+        3: '点评：（上级填写）'
       },
       fileList: [],
       pickerOptions: {
@@ -2219,7 +2369,11 @@ export default {
           this.assessData = assessData
           // 绩效明细使用
           this.scoringDetailData = assessData
-        }else{
+        } else if (this.formData.performanceType === 3) {
+          this.assessData = this.normalizePerformItemsThree(performItems)
+          this.evaluationStandard = row.evaluationStandard || ''
+          this.scoringDetailData = performItems
+        } else {
           this.assessData = performItems.filter(item => item.performType != 4)
           this.assessTwoData = performItems.filter(item => item.performType == 4)
           // 绩效明细使用
@@ -2241,11 +2395,124 @@ export default {
     },
     // 设置考核内容
     setAssessContent() {
-      if (this.formData.performanceType == 1){
+      if (this.formData.performanceType == 1) {
         this.setAssessVisible = true
-      }else{
+      } else if (this.formData.performanceType == 3) {
+        this.setAssessThreeVisible = true
+      } else {
         this.setAssessTwoVisible = true
       }
+    },
+    buildDisplayRowsThree(items) {
+      const rows = []
+      items.forEach((item, index) => {
+        if (item.performType === 1) {
+          rows.push({ rowKind: 'workAssess', _sourceIndex: index })
+          rows.push({ rowKind: 'workOverview', _sourceIndex: index })
+        } else if (item.performType === 2) {
+          rows.push({ rowKind: 'assess', _sourceIndex: index })
+        } else if (item.performType === 3) {
+          rows.push({ rowKind: 'comment', _sourceIndex: index })
+        }
+      })
+      return rows
+    },
+    getSummariesThree() {
+      return ['', '', '', '', '']
+    },
+    parseAssessContentLabelThree(element) {
+      const text = (element || '').trim()
+      if (!text.startsWith('考核内容')) {
+        return { label: '', element: text }
+      }
+      const lines = text.split('\n')
+      const label = lines[0].trim()
+      const rest = lines.slice(1).join('\n').trim()
+      return { label, element: rest || label }
+    },
+    normalizePerformItemsThree(items) {
+      const sorted = [...items].sort((a, b) => a.performType - b.performType)
+      const result = []
+      const workLabels = ['考核内容1', '考核内容2']
+      let workIndex = 0
+      let i = 0
+      while (i < sorted.length) {
+        const item = sorted[i]
+        if (item.performType === 3) {
+          result.push({ performType: 3, element: item.element || '' })
+          i++
+          continue
+        }
+        if (item.performType === 2) {
+          const parsed = this.parseAssessContentLabelThree(item.element)
+          result.push({
+            performType: 2,
+            assessContentLabel: parsed.label || item.assessContentLabel || '',
+            element: parsed.label ? parsed.element : item.element || '',
+            standard: item.standard || '',
+            weight: item.weight
+          })
+          i++
+          continue
+        }
+        if (item.performType === 1) {
+          if (item.assessContentLabel) {
+            result.push({
+              performType: 1,
+              assessContentLabel: item.assessContentLabel,
+              element: item.element || '',
+              standard: item.standard || '',
+              weight: item.weight,
+              performTypeDesc: item.performTypeDesc || ''
+            })
+            i++
+            workIndex++
+            continue
+          }
+          const isOverview =
+            item.rowKind === 'overview' || (item.element || '').includes('情况概述')
+          if (isOverview) {
+            if (result.length && result[result.length - 1].performType === 1) {
+              result[result.length - 1].performTypeDesc =
+                item.performTypeDesc || item.element || ''
+            }
+            i++
+            continue
+          }
+          const parsed = this.parseAssessContentLabelThree(item.element)
+          const label = parsed.label || workLabels[workIndex] || `考核内容${workIndex + 1}`
+          let performTypeDesc = item.performTypeDesc || ''
+          if (
+            i + 1 < sorted.length &&
+            sorted[i + 1].performType === 1 &&
+            (sorted[i + 1].rowKind === 'overview' ||
+              (sorted[i + 1].element || '').includes('情况概述'))
+          ) {
+            performTypeDesc =
+              sorted[i + 1].performTypeDesc || sorted[i + 1].element || ''
+            i += 2
+          } else {
+            i++
+          }
+          result.push({
+            performType: 1,
+            assessContentLabel: label,
+            element: parsed.element,
+            standard: item.standard || '',
+            weight: item.weight,
+            performTypeDesc
+          })
+          workIndex++
+          continue
+        }
+        i++
+      }
+      return result
+    },
+    isOverallStandardFirstRowThree(rowIndex) {
+      return this.tableDisplayDataThree.findIndex(
+        row => row.rowKind === 'workAssess' || row.rowKind === 'assess'
+      ) === rowIndex
     },
     // 获取考核内容
     queryPersonPerformanceTemp(row){
@@ -2265,7 +2532,11 @@ export default {
           this.assessData = data
           // 绩效明细使用
           this.scoringDetailData = res.data
-        }else{
+        } else if (this.formData.performanceType === 3) {
+          this.assessData = this.normalizePerformItemsThree(res.data)
+          this.evaluationStandard = res.evaluationStandard || ''
+          this.scoringDetailData = res.data
+        } else {
           this.assessData = res.data.filter(item => item.performType !== 4)
           this.assessTwoData = res.data.filter(item => item.performType === 4)
 
@@ -2277,6 +2548,53 @@ export default {
 
     },
     objectSpanMethod({ row, column, rowIndex, columnIndex }) {
+      if (this.formData.performanceType === 3) {
+        if (row.rowKind === 'comment') {
+          if (columnIndex === 1) {
+            return [1, 3]
+          }
+          if (columnIndex === 2 || columnIndex === 3 || columnIndex === 4) {
+            return [0, 0]
+          }
+        }
+        if (row.rowKind === 'workOverview') {
+          if (columnIndex === 3 || columnIndex === 4) {
+            return [0, 0]
+          }
+        }
+        if (columnIndex === 3) {
+          if (row.rowKind === 'workAssess') {
+            return { rowspan: 2, colspan: 1 }
+          }
+          if (row.rowKind === 'workOverview') {
+            return { rowspan: 0, colspan: 0 }
+          }
+        }
+        if (columnIndex === 0) {
+          if (row.rowKind === 'comment') {
+            return { rowspan: 1, colspan: 1 }
+          }
+          const _row = this.mergeColumn()[rowIndex]
+          const _col = _row > 0 ? 1 : 0
+          return { rowspan: _row, colspan: _col }
+        }
+        if (columnIndex === 4) {
+          if (row.rowKind === 'comment' || row.rowKind === 'workOverview') {
+            return [0, 0]
+          }
+          const spanCount = this.tableDisplayDataThree.filter(
+            r => r.rowKind !== 'comment'
+          ).length
+          if (
+            (row.rowKind === 'workAssess' || row.rowKind === 'assess') &&
+            this.isOverallStandardFirstRowThree(rowIndex)
+          ) {
+            return { rowspan: spanCount, colspan: 1 }
+          }
+          return { rowspan: 0, colspan: 0 }
+        }
+        return
+      }
       if (columnIndex === 0) {
         const _row = this.mergeColumn()[rowIndex];
         const _col = _row > 0 ? 1 : 0;
@@ -2320,17 +2638,37 @@ export default {
     mergeColumn() {
       const spanOneArr = [];
       let concatOne = 0;
+      if (this.formData.performanceType === 3) {
+        this.tableDisplayDataThree.forEach((displayRow, index) => {
+          const prevDisplayRow = index > 0 ? this.tableDisplayDataThree[index - 1] : null
+          if (displayRow.rowKind === 'comment') {
+            spanOneArr.push(1)
+            return
+          }
+          const performType = this.assessData[displayRow._sourceIndex].performType
+          const prevPerformType = prevDisplayRow
+            ? this.assessData[prevDisplayRow._sourceIndex].performType
+            : null
+          if (index === 0 || prevDisplayRow.rowKind === 'comment' || performType !== prevPerformType) {
+            spanOneArr.push(1)
+            concatOne = index
+          } else {
+            spanOneArr[concatOne] += 1
+            spanOneArr.push(0)
+          }
+        })
+        return spanOneArr
+      }
       this.assessData.forEach((item, index) => {
         if (index === 0) {
           spanOneArr.push(1);
+          concatOne = index;
+        } else if (item.performType === this.assessData[index - 1].performType) {
+          spanOneArr[concatOne] += 1;
+          spanOneArr.push(0);
         } else {
-          if (item.performType === this.assessData[index - 1].performType) {
-            spanOneArr[concatOne] += 1;
-            spanOneArr.push(0);
-          } else {
-            spanOneArr.push(1);
-            concatOne = index;
-          }
+          spanOneArr.push(1);
+          concatOne = index;
         }
       });
       return spanOneArr;
@@ -2391,7 +2729,9 @@ export default {
             performItems.push(item)
           }
         })
-      }else{
+      } else if (this.formData.performanceType === 3) {
+        performItems = this.assessData
+      } else {
         performItems = this.assessData.concat(this.assessTwoData)
       }
       var submitData = {
@@ -2401,6 +2741,9 @@ export default {
         performMonth: this.assessInfo.performMonth,
         finalScore: this.assessInfo.finalScore,
         performItems: performItems
+      }
+      if (this.formData.performanceType === 3) {
+        submitData.evaluationStandard = this.evaluationStandard
       }
       upsertPersonPerformance(submitData).then(res => {
         if (res.success){
@@ -2449,11 +2792,15 @@ export default {
   computed: {
     uniqueYears() {
       return [...new Set(this.formData.performances.map(item => item.performYear))].reverse();
+    },
+    tableDisplayDataThree() {
+      return this.buildDisplayRowsThree(this.assessData)
     }
   },
   components:{
     AssessContent,
     AssessTwoContent,
+    AssessThreeContent,
     ScoringDetail
   }
 }
@@ -2763,6 +3110,52 @@ export default {
   /deep/ .el-table__footer-wrapper tbody td {
     padding:  5px 0;
   }
+}
+.assess-element-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.assess-content-label {
+  font-weight: bold;
+  color: #303133;
+  line-height: 1.4;
+}
+.weight-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  min-height: 48px;
+}
+.overall-standard {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 100%;
+  font-size: 13px;
+  line-height: 1.6;
+  color: #303133;
+}
+.overall-standard-list {
+  flex: 1;
+  p {
+    margin: 0 0 6px;
+  }
+}
+.monthly-evaluation-footer {
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 12px;
+  padding-top: 10px;
+  border-top: 1px dashed #dcdfe6;
+}
+.monthly-evaluation-label {
+  font-size: 14px;
+  font-weight: bold;
+  color: #303133;
 }
 .el-card {
   /deep/ .el-card__header {
