@@ -18,8 +18,18 @@
           width="160"
         >
           <template slot-scope="scope">
-            <div style="text-align: center">
-              {{ performTypes[assessData[scope.row._sourceIndex].performType] }}
+            <div
+              v-if="showAddButton(scope.$index)"
+              style="text-align: center"
+            >
+              {{ performTypes[getMergeGroupPerformType(scope.$index)] }}
+              <el-button
+                type="primary"
+                size="mini"
+                icon="el-icon-plus"
+                circle
+                @click="addAssessItem(getMergeGroupPerformType(scope.$index))"
+              />
             </div>
           </template>
         </el-table-column>
@@ -89,15 +99,21 @@
           width="120"
         >
           <template slot-scope="scope">
-            <div
-              v-if="scope.row.rowKind === 'workAssess' || scope.row.rowKind === 'assess'"
-              class="weight-cell"
-            >
-              <el-input
-                v-model="assessData[scope.row._sourceIndex].weight"
-                type="number"
-              />
-            </div>
+            <el-input v-model="scope.row.weight" type="number"></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column
+          label="操作"
+          width="90"
+          align="center"
+        >
+          <template slot-scope="scope">
+            <el-button
+              v-if="showDeleteButton(scope.row)"
+              size="mini"
+              type="danger"
+              @click="handleDelete(scope.row._sourceIndex)"
+            >删除</el-button>
           </template>
         </el-table-column>
         <el-table-column
@@ -109,25 +125,7 @@
               v-if="isOverallStandardFirstRow(scope.$index) && scope.row.rowKind !== 'comment'"
               class="overall-standard"
             >
-              <div class="overall-standard-list">
-                <p v-for="(line, idx) in overallEvaluationStandard" :key="idx">{{ line }}</p>
-              </div>
-              <div class="monthly-evaluation-footer">
-                <span class="monthly-evaluation-label">本月评定：</span>
-                <el-select
-                  v-model="evaluationStandard"
-                  placeholder="请选择"
-                  clearable
-                  style="width: 100%"
-                >
-                  <el-option
-                    v-for="item in evaluationStandardOptions"
-                    :key="item"
-                    :label="item"
-                    :value="item"
-                  />
-                </el-select>
-              </div>
+              <p v-for="(line, idx) in overallEvaluationStandard" :key="idx">{{ line }}</p>
             </div>
           </template>
         </el-table-column>
@@ -141,6 +139,7 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import { queryPersonPerformanceTemp, upsertPersonPerformanceTemp } from '@/api/hrmList'
 
 const OVERALL_EVALUATION_STANDARD = [
@@ -233,23 +232,152 @@ export default {
       return this.buildDisplayRows(this.assessData)
     }
   },
+  watch: {
+    evaluationStandard(val) {
+      if (this._summaryEvalVm) {
+        this._summaryEvalVm.localValue = val
+      }
+    },
+    isTable() {
+      this.$nextTick(() => {
+        this.mountSummaryEvaluation()
+      })
+    }
+  },
+  mounted() {
+    this.$nextTick(() => {
+      this.mountSummaryEvaluation()
+    })
+  },
+  beforeDestroy() {
+    this.destroySummaryEvaluation()
+  },
   created() {
     this.queryPersonPerformanceTemp()
   },
   methods: {
+    normalizePerformType(performType) {
+      const type = Number(performType)
+      return type >= 1 && type <= 3 ? type : performType
+    },
     isWorkTaskItem(item) {
-      return item.performType === 1
+      return Number(item.performType) === 1
+    },
+    getMergeGroupPerformType(rowIndex) {
+      const merge = this.mergeColumn()
+      let start = rowIndex
+      while (start > 0 && merge[start] === 0) {
+        start--
+      }
+      const row = this.tableDisplayData[start]
+      if (row && row.performType != null) {
+        return this.normalizePerformType(row.performType)
+      }
+      return this.normalizePerformType(
+        this.assessData[row._sourceIndex].performType
+      )
+    },
+    showAddButton(rowIndex) {
+      const merge = this.mergeColumn()[rowIndex]
+      return merge > 0
+    },
+    showDeleteButton(row) {
+      if (row.rowKind === 'workOverview') {
+        return false
+      }
+      const item = this.assessData[row._sourceIndex]
+      return this.deleteCheck(item.performType)
+    },
+    deleteCheck(performType) {
+      const type = this.normalizePerformType(performType)
+      return this.assessData.filter(
+        item => this.normalizePerformType(item.performType) === type
+      ).length > 1
+    },
+    getNextAssessContentLabel(performType) {
+      const type = this.normalizePerformType(performType)
+      const items = this.assessData.filter(
+        item => this.normalizePerformType(item.performType) === type
+      )
+      let maxNum = 0
+      items.forEach(item => {
+        const match = (item.assessContentLabel || '').match(/考核内容(\d+)/)
+        if (match) {
+          maxNum = Math.max(maxNum, parseInt(match[1], 10))
+        }
+      })
+      return `考核内容${maxNum + 1}`
+    },
+    createDefaultItem(performType) {
+      const type = this.normalizePerformType(performType)
+      if (type === 1) {
+        return {
+          performType: 1,
+          assessContentLabel: this.getNextAssessContentLabel(1),
+          element: '',
+          standard: '',
+          weight: 0,
+          performTypeDesc: ''
+        }
+      }
+      if (type === 2) {
+        return {
+          performType: 2,
+          assessContentLabel: this.getNextAssessContentLabel(2),
+          element: '',
+          standard: '',
+          weight: 0
+        }
+      }
+      return {
+        performType: 3,
+        element: ''
+      }
+    },
+    refreshTable() {
+      this.isTable = false
+      this.$nextTick(() => {
+        this.isTable = true
+        this.$nextTick(() => {
+          this.mountSummaryEvaluation()
+        })
+      })
+    },
+    addAssessItem(performType) {
+      const type = this.normalizePerformType(performType)
+      const assessData = JSON.parse(JSON.stringify(this.assessData))
+      const newItem = this.createDefaultItem(type)
+      let insertAt = assessData.length
+      for (let i = assessData.length - 1; i >= 0; i--) {
+        if (this.normalizePerformType(assessData[i].performType) === type) {
+          insertAt = i + 1
+          break
+        }
+        if (this.normalizePerformType(assessData[i].performType) < type) {
+          insertAt = i + 1
+          break
+        }
+      }
+      assessData.splice(insertAt, 0, newItem)
+      this.assessData = assessData
+      this.refreshTable()
+    },
+    handleDelete(sourceIndex) {
+      this.assessData.splice(sourceIndex, 1)
+      this.refreshTable()
     },
     buildDisplayRows(items) {
       const rows = []
       items.forEach((item, index) => {
-        if (this.isWorkTaskItem(item)) {
-          rows.push({ rowKind: 'workAssess', _sourceIndex: index })
-          rows.push({ rowKind: 'workOverview', _sourceIndex: index })
-        } else if (item.performType === 2) {
-          rows.push({ rowKind: 'assess', _sourceIndex: index })
-        } else if (item.performType === 3) {
-          rows.push({ rowKind: 'comment', _sourceIndex: index })
+        const performType = this.normalizePerformType(item.performType)
+        const base = { _sourceIndex: index, performType }
+        if (performType === 1) {
+          rows.push({ ...base, rowKind: 'workAssess' })
+          rows.push({ ...base, rowKind: 'workOverview' })
+        } else if (performType === 2) {
+          rows.push({ ...base, rowKind: 'assess' })
+        } else if (performType === 3) {
+          rows.push({ ...base, rowKind: 'comment' })
         }
       })
       return rows
@@ -357,10 +485,16 @@ export default {
         }
         const items = Array.isArray(res.data) ? res.data : []
         if (items.length > 0) {
-          this.assessData = this.normalizePerformItems(items)
+          this.assessData = this.normalizePerformItems(items).map(item => ({
+            ...item,
+            performType: this.normalizePerformType(item.performType)
+          }))
         } else {
           this.assessData = JSON.parse(JSON.stringify(this.defaultAssessContent))
         }
+        this.$nextTick(() => {
+          this.mountSummaryEvaluation()
+        })
       })
     },
     assessSubmit() {
@@ -381,12 +515,12 @@ export default {
         if (columnIndex === 1) {
           return [1, 3]
         }
-        if (columnIndex === 2 || columnIndex === 3 || columnIndex === 4) {
+        if (columnIndex === 2 || columnIndex === 3) {
           return [0, 0]
         }
       }
       if (row.rowKind === 'workOverview') {
-        if (columnIndex === 3 || columnIndex === 4) {
+        if (columnIndex === 3 || columnIndex === 4 || columnIndex === 5) {
           return [0, 0]
         }
       }
@@ -398,16 +532,21 @@ export default {
           return { rowspan: 0, colspan: 0 }
         }
       }
-      if (columnIndex === 0) {
-        if (row.rowKind === 'comment') {
-          return { rowspan: 1, colspan: 1 }
+      if (columnIndex === 4) {
+        if (row.rowKind === 'workAssess') {
+          return { rowspan: 2, colspan: 1 }
         }
+        if (row.rowKind === 'workOverview') {
+          return { rowspan: 0, colspan: 0 }
+        }
+      }
+      if (columnIndex === 0) {
         const _row = this.mergeColumn()[rowIndex]
         const _col = _row > 0 ? 1 : 0
         return { rowspan: _row, colspan: _col }
       }
-      if (columnIndex === 4) {
-        if (row.rowKind === 'comment' || row.rowKind === 'workOverview') {
+      if (columnIndex === 5) {
+        if (row.rowKind === 'workOverview' || row.rowKind === 'comment') {
           return [0, 0]
         }
         const spanCount = this.tableDisplayData.filter(
@@ -426,16 +565,20 @@ export default {
       const spanOneArr = []
       let concatOne = 0
       this.tableDisplayData.forEach((row, index) => {
-        const item = this.assessData[row._sourceIndex]
-        if (row.rowKind === 'comment') {
-          spanOneArr.push(1)
-          return
-        }
-        if (
-          index === 0 ||
-          this.tableDisplayData[index - 1].rowKind === 'comment' ||
-          item.performType !== this.assessData[this.tableDisplayData[index - 1]._sourceIndex].performType
-        ) {
+        const performType = row.performType != null
+          ? this.normalizePerformType(row.performType)
+          : this.normalizePerformType(
+            this.assessData[row._sourceIndex].performType
+          )
+        const prevRow = index > 0 ? this.tableDisplayData[index - 1] : null
+        const prevPerformType = prevRow
+          ? (prevRow.performType != null
+            ? this.normalizePerformType(prevRow.performType)
+            : this.normalizePerformType(
+              this.assessData[prevRow._sourceIndex].performType
+            ))
+          : null
+        if (index === 0 || performType !== prevPerformType) {
           spanOneArr.push(1)
           concatOne = index
         } else {
@@ -446,7 +589,73 @@ export default {
       return spanOneArr
     },
     getSummaries() {
-      return ['', '', '', '', '']
+      return ['', '', '', '本月评定：', '', '']
+    },
+    destroySummaryEvaluation() {
+      if (this._summaryEvalVm) {
+        this._summaryEvalVm.$destroy()
+        this._summaryEvalVm = null
+      }
+    },
+    mountSummaryEvaluation() {
+      const tableRef = this.$refs.table
+      if (!tableRef || !this.isTable) return
+      const footerTr = tableRef.$el.querySelector('.el-table__footer-wrapper tbody tr')
+      if (!footerTr) return
+      const cells = footerTr.querySelectorAll('td')
+      if (cells.length < 6) return
+      const weightCell = cells[3]
+      const selectCell = cells[5]
+      this.destroySummaryEvaluation()
+      for (let i = 0; i < 3; i++) {
+        cells[i].innerHTML = ''
+      }
+      if (cells[4]) {
+        cells[4].innerHTML = ''
+      }
+      weightCell.style.textAlign = 'right'
+      weightCell.style.verticalAlign = 'middle'
+      const parent = this
+      const Vm = Vue.extend({
+        data() {
+          return {
+            localValue: parent.evaluationStandard
+          }
+        },
+        watch: {
+          localValue(val) {
+            parent.evaluationStandard = val
+          }
+        },
+        render(h) {
+          return h(
+            'el-select',
+            {
+              props: {
+                value: this.localValue,
+                placeholder: '请选择',
+                clearable: true
+              },
+              style: { width: '100%' },
+              on: {
+                input: val => {
+                  this.localValue = val
+                }
+              }
+            },
+            parent.evaluationStandardOptions.map(item =>
+              h('el-option', {
+                key: item,
+                props: { label: item, value: item }
+              })
+            )
+          )
+        }
+      })
+      this._summaryEvalVm = new Vm()
+      selectCell.innerHTML = ''
+      this._summaryEvalVm.$mount()
+      selectCell.appendChild(this._summaryEvalVm.$el)
     },
     clearAssess() {
       this.$emit('clearAssess')
@@ -505,30 +714,15 @@ export default {
   min-height: 48px;
 }
 .overall-standard {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 100%;
   font-size: 13px;
   line-height: 1.6;
   color: #303133;
-}
-.overall-standard-list {
-  flex: 1;
   p {
     margin: 0 0 6px;
   }
 }
-.monthly-evaluation-footer {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px dashed #dcdfe6;
-}
-.monthly-evaluation-label {
+/deep/ .el-table__footer-wrapper tbody td:nth-child(4) {
+  text-align: right;
   font-size: 14px;
   font-weight: bold;
   color: #303133;

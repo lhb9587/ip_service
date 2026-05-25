@@ -512,6 +512,7 @@
       </div>
       <div class="assess-div" v-else-if="formData.performanceType === 3">
         <el-table
+          ref="assessThreeTable"
           class="assess-table"
           :data="tableDisplayDataThree"
           :span-method="objectSpanMethod"
@@ -606,27 +607,7 @@
                 v-if="isOverallStandardFirstRowThree(scope.$index) && scope.row.rowKind !== 'comment'"
                 class="overall-standard"
               >
-                <div class="overall-standard-list">
-                  <p v-for="(line, idx) in overallEvaluationStandard" :key="idx">{{ line }}</p>
-                </div>
-                <div class="monthly-evaluation-footer">
-                  <span class="monthly-evaluation-label">本月评定：</span>
-                  <el-select
-                    v-if="performStatus != 1 && formData.userId != $store.getters.userId && $store.getters.permissions.includes(299)"
-                    v-model="evaluationStandard"
-                    placeholder="请选择"
-                    clearable
-                    style="width: 100%"
-                  >
-                    <el-option
-                      v-for="item in evaluationStandardOptions"
-                      :key="item"
-                      :label="item"
-                      :value="item"
-                    />
-                  </el-select>
-                  <span v-else>{{ evaluationStandard || '—' }}</span>
-                </div>
+                <p v-for="(line, idx) in overallEvaluationStandard" :key="idx">{{ line }}</p>
               </div>
             </template>
           </el-table-column>
@@ -824,6 +805,7 @@
 </template>
 
 <script>
+import Vue from 'vue'
 import { uploadPersonMaterial } from "@/api/ipServiceApi.config.js";
 import { queryTalentPersonInfo, queryPositions, queryOrganizations, upsertTalentPersonInfo, updatePersonSummary, queryPersonPerformanceTemp, upsertPersonPerformance, deletePersonMaterial, exportTalentPersonPerformance } from '@/api/hrmList'
 import { getToken } from "@/utils/auth";
@@ -2384,6 +2366,11 @@ export default {
       this.performStatus = row.status
       this.performMaterials = row.performMaterials
       this.assessVisible = true
+      if (this.formData.performanceType === 3) {
+        this.$nextTick(() => {
+          this.mountSummaryEvaluationThree()
+        })
+      }
       if (this.performStatus == 1) {
         this.$alert('请在规定时间，填写月绩效考核表。当前仅查看！', '提示', {
           confirmButtonText: '确定',
@@ -2418,7 +2405,84 @@ export default {
       return rows
     },
     getSummariesThree() {
-      return ['', '', '', '', '']
+      return ['', '', '', '本月评定：', '']
+    },
+    canEditSummaryEvaluation() {
+      return (
+        this.performStatus != 1 &&
+        this.formData.userId != this.$store.getters.userId &&
+        this.$store.getters.permissions.includes(299)
+      )
+    },
+    destroySummaryEvaluationThree() {
+      if (this._summaryEvalVmThree) {
+        this._summaryEvalVmThree.$destroy()
+        this._summaryEvalVmThree = null
+      }
+    },
+    mountSummaryEvaluationThree() {
+      if (this.formData.performanceType !== 3 || !this.assessVisible) return
+      const tableRef = this.$refs.assessThreeTable
+      if (!tableRef) return
+      const footerTr = tableRef.$el.querySelector('.el-table__footer-wrapper tbody tr')
+      if (!footerTr) return
+      const cells = footerTr.querySelectorAll('td')
+      if (cells.length < 5) return
+      const weightCell = cells[3]
+      const selectCell = cells[4]
+      this.destroySummaryEvaluationThree()
+      for (let i = 0; i < 3; i++) {
+        cells[i].innerHTML = ''
+      }
+      weightCell.style.textAlign = 'right'
+      weightCell.style.verticalAlign = 'middle'
+      const parent = this
+      const canEdit = this.canEditSummaryEvaluation()
+      const Vm = Vue.extend({
+        data() {
+          return {
+            localValue: parent.evaluationStandard
+          }
+        },
+        watch: {
+          localValue(val) {
+            if (canEdit) {
+              parent.evaluationStandard = val
+            }
+          }
+        },
+        render(h) {
+          if (canEdit) {
+            return h(
+              'el-select',
+              {
+                props: {
+                  value: this.localValue,
+                  placeholder: '请选择',
+                  clearable: true
+                },
+                style: { width: '100%' },
+                on: {
+                  input: val => {
+                    this.localValue = val
+                  }
+                }
+              },
+              parent.evaluationStandardOptions.map(item =>
+                h('el-option', {
+                  key: item,
+                  props: { label: item, value: item }
+                })
+              )
+            )
+          }
+          return h('span', parent.evaluationStandard || '—')
+        }
+      })
+      this._summaryEvalVmThree = new Vm()
+      selectCell.innerHTML = ''
+      this._summaryEvalVmThree.$mount()
+      selectCell.appendChild(this._summaryEvalVmThree.$el)
     },
     parseAssessContentLabelThree(element) {
       const text = (element || '').trim()
@@ -2536,6 +2600,9 @@ export default {
           this.assessData = this.normalizePerformItemsThree(res.data)
           this.evaluationStandard = res.evaluationStandard || ''
           this.scoringDetailData = res.data
+          this.$nextTick(() => {
+            this.mountSummaryEvaluationThree()
+          })
         } else {
           this.assessData = res.data.filter(item => item.performType !== 4)
           this.assessTwoData = res.data.filter(item => item.performType === 4)
@@ -2553,7 +2620,7 @@ export default {
           if (columnIndex === 1) {
             return [1, 3]
           }
-          if (columnIndex === 2 || columnIndex === 3 || columnIndex === 4) {
+          if (columnIndex === 2 || columnIndex === 3) {
             return [0, 0]
           }
         }
@@ -2571,15 +2638,12 @@ export default {
           }
         }
         if (columnIndex === 0) {
-          if (row.rowKind === 'comment') {
-            return { rowspan: 1, colspan: 1 }
-          }
           const _row = this.mergeColumn()[rowIndex]
           const _col = _row > 0 ? 1 : 0
           return { rowspan: _row, colspan: _col }
         }
         if (columnIndex === 4) {
-          if (row.rowKind === 'comment' || row.rowKind === 'workOverview') {
+          if (row.rowKind === 'workOverview' || row.rowKind === 'comment') {
             return [0, 0]
           }
           const spanCount = this.tableDisplayDataThree.filter(
@@ -2640,16 +2704,12 @@ export default {
       let concatOne = 0;
       if (this.formData.performanceType === 3) {
         this.tableDisplayDataThree.forEach((displayRow, index) => {
-          const prevDisplayRow = index > 0 ? this.tableDisplayDataThree[index - 1] : null
-          if (displayRow.rowKind === 'comment') {
-            spanOneArr.push(1)
-            return
-          }
           const performType = this.assessData[displayRow._sourceIndex].performType
-          const prevPerformType = prevDisplayRow
-            ? this.assessData[prevDisplayRow._sourceIndex].performType
-            : null
-          if (index === 0 || prevDisplayRow.rowKind === 'comment' || performType !== prevPerformType) {
+          const prevPerformType =
+            index > 0
+              ? this.assessData[this.tableDisplayDataThree[index - 1]._sourceIndex].performType
+              : null
+          if (index === 0 || performType !== prevPerformType) {
             spanOneArr.push(1)
             concatOne = index
           } else {
@@ -2788,6 +2848,25 @@ export default {
         }
       })
     }
+  },
+  watch: {
+    assessVisible(val) {
+      if (val && this.formData.performanceType === 3) {
+        this.$nextTick(() => {
+          this.mountSummaryEvaluationThree()
+        })
+      } else {
+        this.destroySummaryEvaluationThree()
+      }
+    },
+    evaluationStandard(val) {
+      if (this._summaryEvalVmThree) {
+        this._summaryEvalVmThree.localValue = val
+      }
+    }
+  },
+  beforeDestroy() {
+    this.destroySummaryEvaluationThree()
   },
   computed: {
     uniqueYears() {
@@ -3129,30 +3208,15 @@ export default {
   min-height: 48px;
 }
 .overall-standard {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-  min-height: 100%;
   font-size: 13px;
   line-height: 1.6;
   color: #303133;
-}
-.overall-standard-list {
-  flex: 1;
   p {
     margin: 0 0 6px;
   }
 }
-.monthly-evaluation-footer {
-  flex-shrink: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-top: 12px;
-  padding-top: 10px;
-  border-top: 1px dashed #dcdfe6;
-}
-.monthly-evaluation-label {
+/deep/ .el-table__footer-wrapper tbody td:nth-child(4) {
+  text-align: right;
   font-size: 14px;
   font-weight: bold;
   color: #303133;
