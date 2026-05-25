@@ -529,7 +529,7 @@
         </el-button>
         <div class="base-header">
           <span class="left-line"></span>
-          <span class="right-text">客户负责人信息</span>
+          <span class="right-text">客户服务团队信息</span>
         </div>
         <div class="base-content">
           <el-form :rules="rules" label-width="130px">
@@ -596,8 +596,7 @@
               :data="customerBaseInfo.customerResponsibleArray"
             >
               <el-table-column
-
-                label="负责人"
+                label="服务团队"
               >
                 <template slot-scope="scope">
                   {{ $commonUtils.transformation($store.getters.allUserList, scope.row.userId, 'userId', 'fullname') }}
