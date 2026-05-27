@@ -1638,6 +1638,39 @@
 
       </el-row>
 
+      <!-- 被申请人信息 -->
+       <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+        <el-col>
+          <div class="grid-content bg-purple">相对方</div>
+        </el-col>
+      </el-row>
+      <template v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="被申请人名称中文:">
+              {{ caseDetailFoemData.respondentNameCn }}
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="被申请人地址中文:">
+              {{ caseDetailFoemData.respondentAddrCn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="12">
+            <el-form-item label="被申请人名称英文:">
+              {{ caseDetailFoemData.respondentNameEn }}
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="被申请人地址英文:">
+              {{ caseDetailFoemData.respondentAddrEn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </template>
+
       <!--                  引证商标信息-->
       <template v-if="['异议', '无效宣告申请', '不予注册复审', '参加不予注册复审', '异议答辩', '撤销复审答辩', '无效宣告答辩'].includes(caseDetailFoemData.caseType)">
         <el-row>
@@ -2394,6 +2427,9 @@ import { template } from 'underscore';
       }
     },
     computed: {
+      respondentCaseTypes() {
+        return ['注册驳回复审','商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','国际注册驳回复审','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','答复临时驳回/审查意见（境外）','无效宣告复审','著作权行政复议', '咨询', '其他']
+      },
       isShowSubjectFile(){
         return (this.caseDetailFoemData.legalNature=='自然人' && this.caseDetailFoemData.appGJdq == '中国') || this.caseDetailFoemData.legalNature!='自然人'
       },

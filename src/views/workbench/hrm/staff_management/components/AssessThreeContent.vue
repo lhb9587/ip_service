@@ -22,7 +22,10 @@
               v-if="showAddButton(scope.$index)"
               style="text-align: center"
             >
-              {{ performTypes[getMergeGroupPerformType(scope.$index)] }}
+              <div class="perform-type-label">
+                <div>{{ performTypes[getMergeGroupPerformType(scope.$index)][0] }}</div>
+                <div>{{ performTypes[getMergeGroupPerformType(scope.$index)][1] }}</div>
+              </div>
               <el-button
                 type="primary"
                 size="mini"
@@ -34,42 +37,52 @@
           </template>
         </el-table-column>
         <el-table-column
-          prop="element"
-          label="考核要素"
-          min-width="200"
+          prop="assessContentLabel"
+          label="考核内容"
+          width="160"
+          align="center"
         >
           <template slot-scope="scope">
-            <template v-if="scope.row.rowKind === 'comment'">
-              <el-input
-                type="textarea"
-                :autosize="{ minRows: 3, maxRows: 6 }"
-                v-model="assessData[scope.row._sourceIndex].element"
-                placeholder="点评: (上级填写)"
-              />
-            </template>
-            <template v-else-if="scope.row.rowKind === 'workAssess'">
-              <div class="assess-element-cell">
-                <span class="assess-content-label">{{ assessData[scope.row._sourceIndex].assessContentLabel }}</span>
-                <el-input
-                  type="textarea"
-                  :autosize="{ minRows: 2, maxRows: 4 }"
-                  v-model="assessData[scope.row._sourceIndex].element"
-                />
-              </div>
-            </template>
-            <template v-else-if="scope.row.rowKind === 'workOverview'">
-              <span class="assess-content-label">情况概述（个人填写）</span>
-            </template>
-            <template v-else-if="scope.row.rowKind === 'assess'">
-              <div class="assess-element-cell">
-                <span class="assess-content-label">{{ assessData[scope.row._sourceIndex].assessContentLabel }}</span>
-                <el-input
-                  type="textarea"
-                  :autosize="{ minRows: 2, maxRows: 4 }"
-                  v-model="assessData[scope.row._sourceIndex].element"
-                />
-              </div>
-            </template>
+            <el-input
+              v-if="scope.row.rowKind === 'comment'"
+              type="textarea"
+              :autosize="{ minRows: 3, maxRows: 6 }"
+              v-model="assessData[scope.row._sourceIndex].element"
+              placeholder="点评: (上级填写)"
+            />
+            <span
+              v-else-if="scope.row.rowKind === 'workAssess' || scope.row.rowKind === 'assess'"
+              class="assess-content-label"
+            >{{ assessData[scope.row._sourceIndex].assessContentLabel }}</span>
+            <div
+              v-else-if="scope.row.rowKind === 'workOverview'"
+              class="assess-content-label assess-content-label--multiline"
+            >
+              <div>情况概述</div>
+              <div>（个人填写）</div>
+            </div>
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="element"
+          label="考核要素"
+          min-width="160"
+        >
+          <template slot-scope="scope">
+            <el-input
+              v-if="scope.row.rowKind === 'workAssess' || scope.row.rowKind === 'assess'"
+              type="textarea"
+              :autosize="{ minRows: 2, maxRows: 4 }"
+              v-model="assessData[scope.row._sourceIndex].element"
+            />
+            <el-input
+              v-else-if="scope.row.rowKind === 'workOverview'"
+              type="textarea"
+              class="work-overview-input"
+              :autosize="{ minRows: 2, maxRows: 6 }"
+              v-model="assessData[scope.row._sourceIndex].completeStatus"
+              placeholder="请填写本月工作情况概述"
+            />
           </template>
         </el-table-column>
         <el-table-column
@@ -83,13 +96,6 @@
               type="textarea"
               :autosize="{ minRows: 4, maxRows: 10 }"
               v-model="assessData[scope.row._sourceIndex].standard"
-            />
-            <el-input
-              v-else-if="scope.row.rowKind === 'workOverview'"
-              type="textarea"
-              :autosize="{ minRows: 2, maxRows: 6 }"
-              v-model="assessData[scope.row._sourceIndex].performTypeDesc"
-              placeholder="请填写本月工作情况概述"
             />
           </template>
         </el-table-column>
@@ -112,7 +118,7 @@
         </el-table-column>
         <el-table-column
           label="操作"
-          width="90"
+          width="100"
           align="center"
         >
           <template slot-scope="scope">
@@ -126,7 +132,7 @@
         </el-table-column>
         <el-table-column
           label="整体评定标准"
-          width="200"
+          width="210"
         >
           <template slot-scope="scope">
             <div
@@ -191,9 +197,9 @@ export default {
       evaluationStandardOptions: ['优秀', '良好', '称职', '待改进', '不合格'],
       overallEvaluationStandard: OVERALL_EVALUATION_STANDARD,
       performTypes: {
-        1: '工作任务(70%)',
-        2: '其他评价(30%)',
-        3: '点评：（上级填写）'
+        1: ['工作任务', '(70%)'],
+        2: ['其他评价', '(30%)'],
+        3: ['点评：', '（上级填写）']
       },
       defaultAssessContent: [
         {
@@ -202,7 +208,7 @@ export default {
           element: '工作投入度与饱和度',
           standard: STANDARD_WORK_INPUT,
           weight: 35,
-          performTypeDesc: ''
+          completeStatus: ''
         },
         {
           performType: 1,
@@ -210,7 +216,7 @@ export default {
           element: '工作质量与成果',
           standard: STANDARD_WORK_QUALITY,
           weight: 35,
-          performTypeDesc: ''
+          completeStatus: ''
         },
         {
           performType: 2,
@@ -337,7 +343,7 @@ export default {
           element: '',
           standard: '',
           weight: 0,
-          performTypeDesc: ''
+          completeStatus: ''
         }
       }
       if (type === 2) {
@@ -489,7 +495,7 @@ export default {
               element: item.element || '',
               standard: item.standard || '',
               weight: item.weight,
-              performTypeDesc: item.performTypeDesc || ''
+              completeStatus: item.completeStatus || ''
             })
             i++
             continue
@@ -498,8 +504,8 @@ export default {
             item.rowKind === 'overview' || (item.element || '').includes('情况概述')
           if (isOverview) {
             if (result.length && result[result.length - 1].performType === 1) {
-              result[result.length - 1].performTypeDesc =
-                item.performTypeDesc || item.element || ''
+              result[result.length - 1].completeStatus =
+                item.completeStatus || item.element || ''
             }
             i++
             continue
@@ -510,15 +516,15 @@ export default {
             '',
             nextNum
           )
-          let performTypeDesc = item.performTypeDesc || ''
+          let completeStatus = item.completeStatus || ''
           if (
             i + 1 < sorted.length &&
             sorted[i + 1].performType === 1 &&
             (sorted[i + 1].rowKind === 'overview' ||
               (sorted[i + 1].element || '').includes('情况概述'))
           ) {
-            performTypeDesc =
-              sorted[i + 1].performTypeDesc || sorted[i + 1].element || ''
+            completeStatus =
+              sorted[i + 1].completeStatus || sorted[i + 1].element || ''
             i += 2
           } else {
             i++
@@ -529,7 +535,7 @@ export default {
             element: parsed.element,
             standard: item.standard || '',
             weight: item.weight,
-            performTypeDesc
+            completeStatus
           })
           continue
         }
@@ -575,18 +581,24 @@ export default {
     objectSpanMethod({ row, column, rowIndex, columnIndex }) {
       if (row.rowKind === 'comment') {
         if (columnIndex === 1) {
-          return [1, 3]
+          return [1, 4]
         }
-        if (columnIndex === 2 || columnIndex === 3) {
+        if (columnIndex === 2 || columnIndex === 3 || columnIndex === 4) {
           return [0, 0]
         }
       }
       if (row.rowKind === 'workOverview') {
-        if (columnIndex === 3 || columnIndex === 4 || columnIndex === 5) {
+        if (columnIndex === 2) {
+          return [1, 2]
+        }
+        if (columnIndex === 3) {
+          return [0, 0]
+        }
+        if (columnIndex === 4 || columnIndex === 5 || columnIndex === 6) {
           return [0, 0]
         }
       }
-      if (columnIndex === 3) {
+      if (columnIndex === 4) {
         if (row.rowKind === 'workAssess') {
           return { rowspan: 2, colspan: 1 }
         }
@@ -594,7 +606,7 @@ export default {
           return { rowspan: 0, colspan: 0 }
         }
       }
-      if (columnIndex === 4) {
+      if (columnIndex === 5) {
         if (row.rowKind === 'workAssess') {
           return { rowspan: 2, colspan: 1 }
         }
@@ -607,7 +619,7 @@ export default {
         const _col = _row > 0 ? 1 : 0
         return { rowspan: _row, colspan: _col }
       }
-      if (columnIndex === 5) {
+      if (columnIndex === 6) {
         if (this.isOverallStandardFirstRow(rowIndex)) {
           return {
             rowspan: this.tableDisplayData.length,
@@ -645,7 +657,7 @@ export default {
       return spanOneArr
     },
     getSummaries() {
-      return ['', '', '', '本月评定：', '', '']
+      return ['', '', '', '', '', '本月评定：', '']
     },
     destroySummaryEvaluation() {
       if (this._summaryEvalVm) {
@@ -659,18 +671,15 @@ export default {
       const footerTr = tableRef.$el.querySelector('.el-table__footer-wrapper tbody tr')
       if (!footerTr) return
       const cells = footerTr.querySelectorAll('td')
-      if (cells.length < 6) return
-      const weightCell = cells[3]
-      const selectCell = cells[5]
+      if (cells.length < 7) return
+      const labelCell = cells[5]
+      const selectCell = cells[6]
       this.destroySummaryEvaluation()
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 5; i++) {
         cells[i].innerHTML = ''
       }
-      if (cells[4]) {
-        cells[4].innerHTML = ''
-      }
-      weightCell.style.textAlign = 'right'
-      weightCell.style.verticalAlign = 'middle'
+      labelCell.style.textAlign = 'right'
+      labelCell.style.verticalAlign = 'middle'
       const parent = this
       const Vm = Vue.extend({
         data() {
@@ -752,15 +761,31 @@ export default {
     padding: 5px 0;
   }
 }
-.assess-element-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
 .assess-content-label {
+  display: inline-block;
   font-weight: bold;
   color: #303133;
   line-height: 1.4;
+  text-align: center;
+}
+.assess-content-label--multiline {
+  display: block;
+  > div {
+    display: block;
+    line-height: 1.5;
+  }
+}
+.perform-type-label {
+  font-weight: bold;
+  color: #303133;
+  line-height: 1.5;
+  margin-bottom: 6px;
+  > div {
+    display: block;
+  }
+}
+.work-overview-input {
+  width: 100%;
 }
 .weight-cell {
   display: flex;
@@ -777,7 +802,7 @@ export default {
     margin: 0 0 6px;
   }
 }
-/deep/ .el-table__footer-wrapper tbody td:nth-child(4) {
+/deep/ .el-table__footer-wrapper tbody td:nth-child(6) {
   text-align: right;
   font-size: 14px;
   font-weight: bold;

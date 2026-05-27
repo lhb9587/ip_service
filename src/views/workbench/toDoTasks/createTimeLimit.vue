@@ -495,6 +495,12 @@ export default {
           this.timelimitInfo.sendDate = res.data.sendDate || ''
           // 对kind赋值
           this.timelimitInfo.kind = res.data.kind
+          if (this.timelimitInfo.tltTypeId === 300312 && res.data.tltUserIdList && res.data.tltUserIdList.length > 0) {
+            this.timelimitInfo.workgroupArray = [{
+              wrkId: null,
+              timelimitUserArray: [...new Set(res.data.tltUserIdList)]
+            }]
+          }
         })
         if(this.getTimelimitTypeAllList.find(item=>this.timelimitInfo.tltTypeId==item.tltTypeId)){
            this.timelimitInfo.tltTypeId != 118 && (this.timelimitInfo.caption=this.getTimelimitTypeAllList.find(item=>this.timelimitInfo.tltTypeId==item.tltTypeId).typeName)

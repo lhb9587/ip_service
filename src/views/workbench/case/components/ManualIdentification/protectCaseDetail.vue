@@ -114,6 +114,37 @@
           {{caseDetailFoemData.lawsuitApplicantArray.map(item=>transformation(selectData.appList,item,'appId','applicantName')).join(',')}}
         </el-form-item>
       </el-row>
+      <!-- 被申请人信息 -->
+      <template v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人名称中文:">
+              {{ caseDetailFoemData.respondentNameCn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人地址中文:">
+              {{ caseDetailFoemData.respondentAddrCn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人名称英文:">
+              {{ caseDetailFoemData.respondentNameEn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人地址英文:">
+              {{ caseDetailFoemData.respondentAddrEn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </template>
       <el-row class="fullRow">
         <el-form-item class="postInfo-container-item" label="侵权人:">
           <template>
@@ -263,6 +294,37 @@
         </el-form-item>
 
       </el-row>
+      <!-- 被申请人信息 -->
+      <template v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人名称中文:">
+              {{ caseDetailFoemData.respondentNameCn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人地址中文:">
+              {{ caseDetailFoemData.respondentAddrCn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人名称英文:">
+              {{ caseDetailFoemData.respondentNameEn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人地址英文:">
+              {{ caseDetailFoemData.respondentAddrEn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </template>
       <el-row>
         <el-form-item label="外方代理所">
           {{caseDetailFoemData.agencyCustName}}
@@ -440,6 +502,37 @@
             {{caseDetailFoemData.appCountry}}
         </el-form-item>
       </el-row>
+      <!-- 被申请人信息 -->
+      <template v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人名称中文:">
+              {{ caseDetailFoemData.respondentNameCn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人地址中文:">
+              {{ caseDetailFoemData.respondentAddrCn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人名称英文:">
+              {{ caseDetailFoemData.respondentNameEn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人地址英文:">
+              {{ caseDetailFoemData.respondentAddrEn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </template>
 
       <el-row>
         <el-form-item label="外方代理所">
@@ -568,6 +661,38 @@
 
       </el-row>
 
+      <!-- 被申请人信息 -->
+      <template v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人名称中文:">
+              {{ caseDetailFoemData.respondentNameCn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人地址中文:">
+              {{ caseDetailFoemData.respondentAddrCn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人名称英文:">
+              {{ caseDetailFoemData.respondentNameEn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+        <el-row>
+          <el-col :span="24">
+            <el-form-item label="被申请人地址英文:">
+              {{ caseDetailFoemData.respondentAddrEn }}
+            </el-form-item>
+          </el-col>
+        </el-row>
+      </template>
+
       <el-row>
         <el-form-item label="外方代理所">
           {{caseDetailFoemData.agencyCustName}}
@@ -641,6 +766,11 @@
     props: {
       caseDetailFoemData: {},
       taskType: {}
+    },
+    computed: {
+      respondentCaseTypes() {
+        return ['注册驳回复审','商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','国际注册驳回复审','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','答复临时驳回/审查意见（境外）','无效宣告复审','著作权行政复议', '咨询', '其他']
+      },
     },
     components: {
       pagination, Goods

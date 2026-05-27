@@ -773,7 +773,7 @@
                       </el-row>
                       <el-row>
                         <el-col :span="24" class="tilteSpan">
-                          <span id="gfdsr-title">各方当事人</span>
+                          <span id="gfdsr-title">申请人</span>
                         </el-col>
                       </el-row>
                       <el-row class="form-border">
@@ -960,6 +960,65 @@
                           <!--                      </el-row>-->
                         </el-col>
                       </el-row>
+
+                  <!-- 被申请人信息 -->
+                   <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+                      <el-col :span="24" class="tilteSpan">
+                        <span id="xdf-title">相对方</span>
+                      </el-col>
+                    </el-row>
+                    <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+                      <el-col :span="24" class="form-con-item">
+                        <el-row class="form-border">
+                          <el-col :span="24">
+                            <el-row class="">
+                              <el-col :span="12">
+                                <el-form-item label="被申请人名称中文:" prop="respondentNameCn" class="postInfo-container-item">
+                                  <el-select
+                                    v-model="caseDetailFoemData.respondentNameCn"
+                                    filterable
+                                    remote
+                                    allow-create
+                                    default-first-option
+                                    placeholder="请输入被申请人名称中文"
+                                    :remote-method="queryRespondentNameCn"
+                                    @change="onRespondentNameCnChange"
+                                    style="width:100%">
+                                    <el-option
+                                      v-for="item in respondentNameCnList"
+                                      :key="item.conId"
+                                      :label="item.fullname"
+                                      :value="item.fullname">
+                                    </el-option>
+                                  </el-select>
+                                </el-form-item>
+                              </el-col>
+                              <el-col :span="12">
+                                <el-form-item label="被申请人地址中文:" prop="respondentAddrCn" class="postInfo-container-item">
+                                  <el-input v-model="caseDetailFoemData.respondentAddrCn" placeholder="请填写被申请人地址中文"></el-input>
+                                </el-form-item>
+                              </el-col>
+                            </el-row>
+                          </el-col>
+                        </el-row>
+                        <el-row class="form-border" style="border-top: none;">
+                          <el-col :span="24">
+                            <el-row class="">
+                              <el-col :span="12">
+                                <el-form-item label="被申请人名称英文:" prop="respondentNameEn" class="postInfo-container-item">
+                                  <el-input v-model="caseDetailFoemData.respondentNameEn" placeholder="请填写被申请人名称英文"></el-input>
+                                </el-form-item>
+                              </el-col>
+                              <el-col :span="12">
+                                <el-form-item label="被申请人地址英文:" prop="respondentAddrEn" class="postInfo-container-item">
+                                  <el-input v-model="caseDetailFoemData.respondentAddrEn" placeholder="请填写被申请人地址英文"></el-input>
+                                </el-form-item>
+                              </el-col>
+                            </el-row>
+                          </el-col>
+                        </el-row>
+                      </el-col>
+                    </el-row>
 
                       <el-row>
                         <el-col class="tilteSpan" :span="24">
@@ -1758,7 +1817,7 @@
                     </el-row>
                     <el-row>
                       <el-col :span="24" class="tilteSpan">
-                        <span id="gfdsr-title">各方当事人</span>
+                        <span id="gfdsr-title">申请人</span>
                       </el-col>
                     </el-row>
                     <el-row class="form-border">
@@ -1943,6 +2002,65 @@
                         <!--                          </el-form-item>-->
                         <!--                        </el-col>-->
                         <!--                      </el-row>-->
+                      </el-col>
+                    </el-row>
+
+                    <!-- 被申请人信息 -->
+                   <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+                      <el-col :span="24" class="tilteSpan">
+                        <span id="xdf-title">相对方</span>
+                      </el-col>
+                    </el-row>
+                    <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+                      <el-col :span="24" class="form-con-item">
+                        <el-row class="form-border">
+                          <el-col :span="24">
+                            <el-row class="">
+                              <el-col :span="12">
+                                <el-form-item label="被申请人名称中文:" prop="respondentNameCn" class="postInfo-container-item">
+                                  <el-select
+                                    v-model="caseDetailFoemData.respondentNameCn"
+                                    filterable
+                                    remote
+                                    allow-create
+                                    default-first-option
+                                    placeholder="请输入被申请人名称中文"
+                                    :remote-method="queryRespondentNameCn"
+                                    @change="onRespondentNameCnChange"
+                                    style="width:100%">
+                                    <el-option
+                                      v-for="item in respondentNameCnList"
+                                      :key="item.conId"
+                                      :label="item.fullname"
+                                      :value="item.fullname">
+                                    </el-option>
+                                  </el-select>
+                                </el-form-item>
+                              </el-col>
+                              <el-col :span="12">
+                                <el-form-item label="被申请人地址中文:" prop="respondentAddrCn" class="postInfo-container-item">
+                                  <el-input v-model="caseDetailFoemData.respondentAddrCn" placeholder="请填写被申请人地址中文"></el-input>
+                                </el-form-item>
+                              </el-col>
+                            </el-row>
+                          </el-col>
+                        </el-row>
+                        <el-row class="form-border" style="border-top: none;">
+                          <el-col :span="24">
+                            <el-row class="">
+                              <el-col :span="12">
+                                <el-form-item label="被申请人名称英文:" prop="respondentNameEn" class="postInfo-container-item">
+                                  <el-input v-model="caseDetailFoemData.respondentNameEn" placeholder="请填写被申请人名称英文"></el-input>
+                                </el-form-item>
+                              </el-col>
+                              <el-col :span="12">
+                                <el-form-item label="被申请人地址英文:" prop="respondentAddrEn" class="postInfo-container-item">
+                                  <el-input v-model="caseDetailFoemData.respondentAddrEn" placeholder="请填写被申请人地址英文"></el-input>
+                                </el-form-item>
+                              </el-col>
+                            </el-row>
+                          </el-col>
+                        </el-row>
                       </el-col>
                     </el-row>
 
@@ -2606,7 +2724,7 @@
                     </el-row>
                     <el-row>
                       <el-col :span="24" class="tilteSpan">
-                        <span id="gfdsr-title">各方当事人</span>
+                        <span id="gfdsr-title">申请人</span>
                       </el-col>
                     </el-row>
                     <el-row class="form-border">
@@ -2833,6 +2951,64 @@
                       </el-col>
                     </el-row>
 
+                    <!-- 被申请人信息 -->
+                   <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+                      <el-col :span="24" class="tilteSpan">
+                        <span id="xdf-title">相对方</span>
+                      </el-col>
+                    </el-row>
+                    <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+                      <el-col :span="24" class="form-con-item">
+                        <el-row class="form-border">
+                          <el-col :span="24">
+                            <el-row class="">
+                              <el-col :span="12">
+                                <el-form-item label="被申请人名称中文:" prop="respondentNameCn" class="postInfo-container-item">
+                                  <el-select
+                                    v-model="caseDetailFoemData.respondentNameCn"
+                                    filterable
+                                    remote
+                                    allow-create
+                                    default-first-option
+                                    placeholder="请输入被申请人名称中文"
+                                    :remote-method="queryRespondentNameCn"
+                                    @change="onRespondentNameCnChange"
+                                    style="width:100%">
+                                    <el-option
+                                      v-for="item in respondentNameCnList"
+                                      :key="item.conId"
+                                      :label="item.fullname"
+                                      :value="item.fullname">
+                                    </el-option>
+                                  </el-select>
+                                </el-form-item>
+                              </el-col>
+                              <el-col :span="12">
+                                <el-form-item label="被申请人地址中文:" prop="respondentAddrCn" class="postInfo-container-item">
+                                  <el-input v-model="caseDetailFoemData.respondentAddrCn" placeholder="请填写被申请人地址中文"></el-input>
+                                </el-form-item>
+                              </el-col>
+                            </el-row>
+                          </el-col>
+                        </el-row>
+                        <el-row class="form-border" style="border-top: none;">
+                          <el-col :span="24">
+                            <el-row class="">
+                              <el-col :span="12">
+                                <el-form-item label="被申请人名称英文:" prop="respondentNameEn" class="postInfo-container-item">
+                                  <el-input v-model="caseDetailFoemData.respondentNameEn" placeholder="请填写被申请人名称英文"></el-input>
+                                </el-form-item>
+                              </el-col>
+                              <el-col :span="12">
+                                <el-form-item label="被申请人地址英文:" prop="respondentAddrEn" class="postInfo-container-item">
+                                  <el-input v-model="caseDetailFoemData.respondentAddrEn" placeholder="请填写被申请人地址英文"></el-input>
+                                </el-form-item>
+                              </el-col>
+                            </el-row>
+                          </el-col>
+                        </el-row>
+                      </el-col>
+                    </el-row>
                     <el-row>
                       <el-col class="tilteSpan" :span="24">
                         <span id='out-title'>境外信息</span>
@@ -3592,6 +3768,64 @@
                       </el-col>
                     </el-row>
 
+                    <!-- 被申请人信息 -->
+                   <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+                      <el-col :span="24" class="tilteSpan">
+                        <span id="xdf-title">相对方</span>
+                      </el-col>
+                    </el-row>
+                    <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+                      <el-col :span="24" class="form-con-item">
+                        <el-row class="form-border">
+                          <el-col :span="24">
+                            <el-row class="">
+                              <el-col :span="12">
+                                <el-form-item label="被申请人名称中文:" prop="respondentNameCn" class="postInfo-container-item">
+                                  <el-select
+                                    v-model="caseDetailFoemData.respondentNameCn"
+                                    filterable
+                                    remote
+                                    allow-create
+                                    default-first-option
+                                    placeholder="请输入被申请人名称中文"
+                                    :remote-method="queryRespondentNameCn"
+                                    @change="onRespondentNameCnChange"
+                                    style="width:100%">
+                                    <el-option
+                                      v-for="item in respondentNameCnList"
+                                      :key="item.conId"
+                                      :label="item.fullname"
+                                      :value="item.fullname">
+                                    </el-option>
+                                  </el-select>
+                                </el-form-item>
+                              </el-col>
+                              <el-col :span="12">
+                                <el-form-item label="被申请人地址中文:" prop="respondentAddrCn" class="postInfo-container-item">
+                                  <el-input v-model="caseDetailFoemData.respondentAddrCn" placeholder="请填写被申请人地址中文"></el-input>
+                                </el-form-item>
+                              </el-col>
+                            </el-row>
+                          </el-col>
+                        </el-row>
+                        <el-row class="form-border" style="border-top: none;">
+                          <el-col :span="24">
+                            <el-row class="">
+                              <el-col :span="12">
+                                <el-form-item label="被申请人名称英文:" prop="respondentNameEn" class="postInfo-container-item">
+                                  <el-input v-model="caseDetailFoemData.respondentNameEn" placeholder="请填写被申请人名称英文"></el-input>
+                                </el-form-item>
+                              </el-col>
+                              <el-col :span="12">
+                                <el-form-item label="被申请人地址英文:" prop="respondentAddrEn" class="postInfo-container-item">
+                                  <el-input v-model="caseDetailFoemData.respondentAddrEn" placeholder="请填写被申请人地址英文"></el-input>
+                                </el-form-item>
+                              </el-col>
+                            </el-row>
+                          </el-col>
+                        </el-row>
+                      </el-col>
+                    </el-row>
                     <el-row>
                       <el-col class="tilteSpan" :span="24">
                         <span id='out-title'>境外信息</span>
@@ -4099,7 +4333,7 @@
     chongtuAudit
   } from '@/api/caseDetail'
   import TaskProgress from '@/views/workbench/case/components/TaskProgress.vue'
-  import { queryCaseAppExamine, searchTmUrl, tmdetailUrl, tmdetailUrl3 } from '@/api/customerList'
+  import { queryCaseAppExamine, searchTmUrl, tmdetailUrl, tmdetailUrl3, querylyctListUrl } from '@/api/customerList'
   import { queryAlltask, tmdetail ,getAdversaryArray,queryUserAll,getCaseTime,queryApplicantByIdList} from '@/api/caseList'
   import serviceApi from '@/api/serviceApi.config.js'
   import { mapGetters } from 'vuex'
@@ -4306,6 +4540,9 @@
   export default {
     name: 'Casedetails',
     computed: {
+      respondentCaseTypes() {
+        return ['注册驳回复审','商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','国际注册驳回复审','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','答复临时驳回/审查意见（境外）','无效宣告复审','著作权行政复议', '咨询', '其他']
+      },
       chongtuAuditViewCom(){
         return !!this.chongtuAuditView
       },
@@ -4629,6 +4866,18 @@
             { required: true, message: '请填写申请人中文地址', trigger: 'blur' }
           ],
           caseOffer:[ { required: true, message: '请填写报价', trigger: 'blur' }],
+          respondentNameCn: [
+            {required: true, message: "请填写被申请人名称中文", trigger: "blur"}
+          ],
+          // respondentAddrCn: [
+          //   {required: true, message: "请填写被申请人地址中文", trigger: "blur"}
+          // ],
+          // respondentNameEn: [
+          //   {required: true, message: "请填写被申请人名称英文", trigger: "blur"}
+          // ],
+          // respondentAddrEn: [
+          //   {required: true, message: "请填写被申请人地址英文", trigger: "blur"}
+          // ],
           // parentCaseRecvDate:[{required: true, message: '请填写前案收文日期', trigger: 'blur'}]
         },
         goodsData: [],
@@ -4857,10 +5106,17 @@
         filingOperationState: false,
         showType: false,
         queryCustomerNameIdList:[],
-        CaseInvestigatorsFlag:true
+        CaseInvestigatorsFlag:true,
+        respondentNameCnList: []
       }
     },
     watch: {
+      'caseDetailFoemData.custName': {
+        handler(n) {
+          n && this.queryRespondentNameCn('')
+        },
+        immediate: true
+      },
       'caseDetailFoemData.lawyer1UserId'(n,o){
         this.oldlawyer1UserId=n
       },
@@ -4949,7 +5205,7 @@
         if (this.caseDetailFoemData.ctAudit && !flag) return false;
         return new Promise(resolve => {
           chongtuTest({
-            taskType: 3,
+            taskType: this.$route.query.taskType || 3,
             taskId: this.caseDetailFoemData.taskId,
             draftNumber: this.caseDetailFoemData.agentNum,
             ...this.$commonUtils.cleanNullAttr(this.caseDetailFoemData)
@@ -4974,7 +5230,7 @@
         return
       }
         chongtuAudit({
-          taskType: 3,
+          taskType: this.$route.query.taskType || 3,
           failReason: this.chongtuAuditReason,
           taskId: this.caseDetailFoemData.taskId,
           result: result === 1 ? 1 : 0
@@ -5545,7 +5801,12 @@
               { title: '案件详情', state: true, id: 'ajxq-title' },
               { title: '客户信息', state: true, id: 'khxx-title' },
               { title: '权利信息', state: true, id: 'sbxx-title' },
-              { title: '各方当事人', state: true, id: 'gfdsr-title' }
+              { title: '申请人', state: true, id: 'gfdsr-title' },
+              {
+                title: "相对方",
+                state: this.respondentCaseTypes.includes(this.caseDetailFoemData.caseType),
+                id: "xdf-title"
+              },
             ].filter(item => item.state)
 
             if (!this.caseDetailFoemData.caseLevel) {
@@ -6299,6 +6560,19 @@
           row.conId = undefined
         }
       },
+      queryRespondentNameCn(keywords) {
+        querylyctListUrl({ custName: this.caseDetailFoemData.custName, pageSize: 200, isCustomer: 1, keywords }).then(res => {
+          this.respondentNameCnList = res.data || []
+        })
+      },
+      onRespondentNameCnChange(val) {
+        const item = this.respondentNameCnList.find(i => i.fullname === val)
+        if (item) {
+          this.$set(this.caseDetailFoemData, 'respondentAddrCn', item.address || '')
+          this.$set(this.caseDetailFoemData, 'respondentNameEn', item.fullnameEn || '')
+          this.$set(this.caseDetailFoemData, 'respondentAddrEn', item.addressEn || '')
+        }
+      },
       remotepaternalUnit1 (val) {
         if(val){
           queryConflicterListUrl({ fullname: val }).then(res => {
@@ -6639,7 +6913,7 @@
         await this.$nextTick()
         this.$refs['postForm'].validate(async valid => {
           if (valid) {
-            if (await this.chongtuTestFunc()) return ;
+            if (this.respondentCaseTypes.includes(this.caseDetailFoemData.caseType) && await this.chongtuTestFunc(true)) return ;
             delete data.checkChongTu
             handoverCase(data)
               .then(res => {

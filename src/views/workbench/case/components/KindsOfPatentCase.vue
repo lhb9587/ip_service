@@ -984,12 +984,23 @@
                     </el-select>
                   </el-form-item>
                 </el-col>
-                <el-col :span="12">
+                <el-col :span="caseType === '海牙国际申请' && caseDetailFormData.das == 1 ? 6 : 12">
                   <el-form-item label="要求提交IDS:">
                     <el-radio-group v-model="caseDetailFormData.needIds" style="margin-left: 10px">
                       <el-radio :label='1'>是</el-radio>
                       <el-radio :label='0'>否</el-radio>
                     </el-radio-group>
+                  </el-form-item>
+                </el-col>
+                <el-col v-if="caseType === '海牙国际申请' && caseDetailFormData.das == 1" :span="6">
+                  <el-form-item label="DAS码:" prop="dasCode">
+                    <el-input
+                      type="text"
+                      size="small"
+                      maxlength="4"
+                      v-model="caseDetailFormData.dasCode"
+                      @input="caseDetailFormData.dasCode = (caseDetailFormData.dasCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)"
+                    ></el-input>
                   </el-form-item>
                 </el-col>
               </el-row>
@@ -1210,16 +1221,15 @@
                     </el-col>
                   </el-row>
                   <el-row class="">
-                    <el-col :span="caseType == '普通新申请' || caseType == 'PCT国家阶段' ? 6 : 12">
+                    <el-col v-if="caseType !== '普通新申请'" :span="caseType == '普通新申请' || caseType == 'PCT国家阶段' ? 6 : 12">
                       <el-form-item label="要求DAS:">
-                        <!--              <el-input type="text" size="small" v-model="caseDetailFormData.das"></el-input>-->
                         <el-radio-group v-model="caseDetailFormData.das" style="margin-left: 10px">
                           <el-radio :label='1'>是</el-radio>
                           <el-radio :label='0'>否</el-radio>
                         </el-radio-group>
                       </el-form-item>
                     </el-col>
-                    <el-col :span="6" v-if="caseDetailFormData.appFromto == '内-内'">
+                    <el-col :span="12" v-if="caseDetailFormData.appFromto == '内-内'">
                       <el-form-item label="预审案件:">
                         <el-radio-group v-model="caseDetailFormData.preexamine" style="margin-left: 10px">
                           <el-radio :label='1'>是</el-radio>
@@ -1630,7 +1640,7 @@
                 </el-row>
                 <div>
                   <el-row>
-                    <el-col :span="6">
+                    <el-col :span="caseType !== '普通新申请' ? 6 : 12">
                       <el-form-item label="请求优先审查:">
                         <el-radio-group v-model="caseDetailFormData.tqsc" style="margin-left: 10px">
                           <el-radio :label='1'>是</el-radio>
@@ -1638,7 +1648,7 @@
                         </el-radio-group>
                       </el-form-item>
                     </el-col>
-                    <el-col :span="6">
+                    <el-col :span="6" v-if="caseType !== '普通新申请'">
                       <el-form-item label="要求DAS:">
                         <el-radio-group v-model="caseDetailFormData.das" style="margin-left: 10px">
                           <el-radio :label='1'>是</el-radio>
@@ -1778,7 +1788,7 @@
               </el-col>
             </el-row>
             <el-row :class="[hideNewApp ? 'hideNewApp' : 'showNewApp']">
-              <el-col :span="24">
+              <el-col :span="caseType == 'PCT国际申请' || caseType == '普通新申请' ? 12 : 24">
                 <el-form-item label="需要优先权期限提醒:">
                   <el-radio-group v-model="caseDetailFormData.applyExternally" style="margin-left: 10px">
                     <el-radio :label='1'>是</el-radio>
@@ -1786,6 +1796,27 @@
                   </el-radio-group>
                 </el-form-item>
               </el-col>
+              <template v-if="caseType == 'PCT国际申请' || caseType == '普通新申请'">
+                <el-col :span="caseDetailFormData.das == 1 ? 6 : 12">
+                  <el-form-item label="要求DAS:">
+                    <el-radio-group v-model="caseDetailFormData.das" style="margin-left: 10px">
+                      <el-radio :label='1'>是</el-radio>
+                      <el-radio :label='0'>否</el-radio>
+                    </el-radio-group>
+                  </el-form-item>
+                </el-col>
+                <el-col v-if="caseDetailFormData.das == 1" :span="6">
+                  <el-form-item label="DAS码:" prop="dasCode">
+                    <el-input
+                      type="text"
+                      size="small"
+                      maxlength="4"
+                      v-model="caseDetailFormData.dasCode"
+                      @input="caseDetailFormData.dasCode = (caseDetailFormData.dasCode || '').toUpperCase().replace(/[^A-Z0-9]/g, '').slice(0, 4)"
+                    ></el-input>
+                  </el-form-item>
+                </el-col>
+              </template>
             </el-row>
           </div>
 
@@ -3166,7 +3197,24 @@
       var checkfeeReduce = (rule, value, callback) => {
         if (value > 1 || value < 0) {
           callback(new Error('费减比例数据错误'))
+        } else {
+          callback()
         }
+      }
+      var checkDasCode = (rule, value, callback) => {
+        if (!((this.caseType === '海牙国际申请' || this.caseType === 'PCT国际申请' || this.caseType === '普通新申请') && this.caseDetailFormData.das == 1)) {
+          callback()
+          return
+        }
+        if (!value) {
+          callback(new Error('请填写DAS码'))
+          return
+        }
+        if (!/^[A-Z0-9]{4}$/.test(value)) {
+          callback(new Error('DAS码需为4位大写字母或数字'))
+          return
+        }
+        callback()
       }
       return {
         invoiceTitleList: [],
@@ -3208,6 +3256,9 @@
           agencyCustId:[{ required: true, message: '请选择外方代理所', trigger: 'change' }],
           feeReduce: [
             { validator: checkfeeReduce, trigger: 'change' }
+          ],
+          dasCode: [
+            { validator: checkDasCode, trigger: ['blur', 'change'] }
           ],
           toCountry: [{ required: true, message: '请选择进入国家', trigger: 'change' }],
           patentType: [{ required: true, message: '请选择专利类型', trigger: 'change' }],

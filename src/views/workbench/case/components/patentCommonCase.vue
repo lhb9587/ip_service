@@ -1712,6 +1712,63 @@
 
         </div>
 
+        <div v-if="respondentCaseTypes.includes(caseType)">
+<!-- 被申请人信息 -->
+            <el-row>
+              <el-col :span="24" class="tilteSpan">
+                <span class="header-info" id="xdf-title">相对方</span>
+              </el-col>
+            </el-row>
+            <el-row class="border-top">
+                  <el-col :span="24">
+                    <el-row class="">
+                      <el-col :span="12">
+                        <el-form-item label="被申请人名称中文:" prop="respondentNameCn" class="postInfo-container-item">
+                          <el-select
+                            v-model="caseDetailFormData.respondentNameCn"
+                            filterable
+                            remote
+                            allow-create
+                            default-first-option
+                            placeholder="请输入被申请人名称中文"
+                            :remote-method="queryRespondentNameCn"
+                            @change="onRespondentNameCnChange"
+                            style="width:100%">
+                            <el-option
+                              v-for="item in respondentNameCnList"
+                              :key="item.conId"
+                              :label="item.fullname"
+                              :value="item.fullname">
+                            </el-option>
+                          </el-select>
+                        </el-form-item>
+                      </el-col>
+                      <el-col :span="12">
+                        <el-form-item label="被申请人地址中文:" prop="respondentAddrCn" class="postInfo-container-item">
+                          <el-input v-model="caseDetailFormData.respondentAddrCn" placeholder="请填写被申请人地址中文"></el-input>
+                        </el-form-item>
+                      </el-col>
+                    </el-row>
+                  </el-col>
+                </el-row>
+                <el-row class="form-border" style="border-top: none;">
+                  <el-col :span="24">
+                    <el-row class="">
+                      <el-col :span="12">
+                        <el-form-item label="被申请人名称英文:" prop="respondentNameEn" class="postInfo-container-item">
+                          <el-input v-model="caseDetailFormData.respondentNameEn" placeholder="请填写被申请人名称英文"></el-input>
+                        </el-form-item>
+                      </el-col>
+                      <el-col :span="12">
+                        <el-form-item label="被申请人地址英文:" prop="respondentAddrEn" class="postInfo-container-item">
+                          <el-input v-model="caseDetailFormData.respondentAddrEn" placeholder="请填写被申请人地址英文"></el-input>
+                        </el-form-item>
+                      </el-col>
+                    </el-row>
+                  </el-col>
+                </el-row>
+        </div>
+
         <!--      母案信息-->
         <div v-if="caseType == '香港登记' || caseType == '澳门登记'">
           <el-row>
@@ -2415,7 +2472,7 @@
 <script>
   import { billSubmitUrl, billDiscount } from '@/api/billApi'
   import { creatematerialUrl } from '@/api/serviceApi.config.js'
-  import { deleteMaterial } from '@/api/customerList.js'
+  import { deleteMaterial, querylyctListUrl } from '@/api/customerList.js'
   import { queryAddrByAppIds } from '@/api/applicant'
   import { formatAmount, fomatFloat, toFixed1, toFixed2 } from '@/utils/filters'
   import {
@@ -2461,6 +2518,9 @@
       custStatusList: {}
     },
     computed: {
+      respondentCaseTypes() {
+        return ['注册驳回复审','商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','国际注册驳回复审','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','答复临时驳回/审查意见（境外）','无效宣告复审','著作权行政复议', '咨询', '其他']
+      },
       hasApplicationType() {
         return this.caseDetailFormData.patentCaseApplicationList && this.caseDetailFormData.patentCaseApplicationList.find(item => item.applicationType == '1752')
       },
@@ -2490,11 +2550,29 @@
           patentType: [{ required: true, message: '请选择专利类型', trigger: 'change' }],
           appFromto: [{ required: true, message: '请选择申请方向', trigger: 'change' }],
           toCountry: [{ required: true, message: '请选择进入国家', trigger: 'change' }],
-          caseCnName: [{ required: true, message: '请填写案件中文名称', trigger: 'blur' }]
+          caseCnName: [{ required: true, message: '请填写案件中文名称', trigger: 'blur' }],
+          respondentNameCn: [
+            {required: true, message: "请填写被申请人名称中文", trigger: "blur"}
+          ],
+          // respondentAddrCn: [
+          //   {required: true, message: "请填写被申请人地址中文", trigger: "blur"}
+          // ],
+          // respondentNameEn: [
+          //   {required: true, message: "请填写被申请人名称英文", trigger: "blur"}
+          // ],
+          // respondentAddrEn: [
+          //   {required: true, message: "请填写被申请人地址英文", trigger: "blur"}
+          // ],
         }
       }
     },
     watch: {
+      'caseDetailFormData.custName': {
+        handler(n) {
+          n && this.queryRespondentNameCn('')
+        },
+        immediate: true
+      },
       'caseDetailFormData.materials': {
         handler(n) {
           this.imageUrl = n && n.find(i => i.materialTypeId == 301510) && n.find(i => i.materialTypeId == 301510).address
@@ -2607,6 +2685,7 @@
         patentApplication: false,
         patentApplicationItem: {},
         anotherCaseNumList: [],
+        respondentNameCnList: [],
         customerContactswfList: [],
         // rules: {
         //   patentType: [{required: true, message: '请选择专利类型', trigger: 'change'},],
@@ -2942,6 +3021,20 @@
           this.anotherCaseNumList = res.data
         })
       },
+      queryRespondentNameCn(keywords) {
+        // if (!keywords) return
+        querylyctListUrl({ custName: this.caseDetailFormData.custName, pageSize: 200, isCustomer: 1, keywords }).then(res => {
+          this.respondentNameCnList = res.data || []
+        })
+      },
+      onRespondentNameCnChange(val) {
+        const item = this.respondentNameCnList.find(i => i.fullname === val)
+        if (item) {
+          this.$set(this.caseDetailFormData, 'respondentAddrCn', item.address || '')
+          this.$set(this.caseDetailFormData, 'respondentNameEn', item.fullnameEn || '')
+          this.$set(this.caseDetailFormData, 'respondentAddrEn', item.addressEn || '')
+        }
+      },
       //外方代理所改变
       wfAgentChange(id) {
         if (id) {
@@ -2991,6 +3084,11 @@
             title: '专利基础信息',
             state: ['咨询', '许可备案', '翻译', '欧洲专利国家生效'].includes(this.caseDetailFormData.caseType),
             id: 'patent-base-title'
+          },
+          {
+            title: "相对方",
+            state: this.respondentCaseTypes.includes(this.caseDetailFormData.caseType),
+            id: "xdf-title"
           },
           {
             title: '母案信息',

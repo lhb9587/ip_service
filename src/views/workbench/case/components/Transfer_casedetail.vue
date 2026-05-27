@@ -2932,7 +2932,64 @@
                       </el-row>
                     </el-col>
                   </el-row>
-
+                  <!-- 被申请人信息 -->
+                   <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+                    <el-col :span="24" class="tilteSpan">
+                      <span id="xdf-title">相对方</span>
+                    </el-col>
+                  </el-row>
+                  <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+                    <el-col :span="24" class="form-con-item">
+                      <el-row class="form-border">
+                        <el-col :span="24">
+                          <el-row class="">
+                            <el-col :span="12">
+                              <el-form-item label="被申请人名称中文:" prop="respondentNameCn" class="postInfo-container-item">
+                                <el-select
+                                  v-model="caseDetailFoemData.respondentNameCn"
+                                  filterable
+                                  remote
+                                  allow-create
+                                  default-first-option
+                                  placeholder="请输入被申请人名称中文"
+                                  :remote-method="queryRespondentNameCn"
+                                  @change="onRespondentNameCnChange"
+                                  style="width:100%">
+                                  <el-option
+                                    v-for="item in respondentNameCnList"
+                                    :key="item.conId"
+                                    :label="item.fullname"
+                                    :value="item.fullname">
+                                  </el-option>
+                                </el-select>
+                              </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                              <el-form-item label="被申请人地址中文:" prop="respondentAddrCn" class="postInfo-container-item">
+                                <el-input v-model="caseDetailFoemData.respondentAddrCn" placeholder="请填写被申请人地址中文"></el-input>
+                              </el-form-item>
+                            </el-col>
+                          </el-row>
+                        </el-col>
+                      </el-row>
+                      <el-row class="form-border" style="border-top: none;">
+                        <el-col :span="24">
+                          <el-row class="">
+                            <el-col :span="12">
+                              <el-form-item label="被申请人名称英文:" prop="respondentNameEn" class="postInfo-container-item">
+                                <el-input v-model="caseDetailFoemData.respondentNameEn" placeholder="请填写被申请人名称英文"></el-input>
+                              </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                              <el-form-item label="被申请人地址英文:" prop="respondentAddrEn" class="postInfo-container-item">
+                                <el-input v-model="caseDetailFoemData.respondentAddrEn" placeholder="请填写被申请人地址英文"></el-input>
+                              </el-form-item>
+                            </el-col>
+                          </el-row>
+                        </el-col>
+                      </el-row>
+                    </el-col>
+                  </el-row>
                   <el-row v-if="ch_caseTypr === '转让/移转'||caseDetailFoemData.changeType==='转让'">
                     <el-col :span="24" class="tilteSpan">
                       <span id="zrrxx-title">转让人信息</span>
@@ -4686,7 +4743,7 @@
     queryReginList,
     splitAddress
   } from "@/api/caseDetail";
-    import { queryCaseAppExamine, searchTmUrl, tmdetailUrl, tmdetailUrl3 } from '@/api/customerList'
+    import { queryCaseAppExamine, searchTmUrl, tmdetailUrl, tmdetailUrl3, querylyctListUrl } from '@/api/customerList'
     import {queryAlltask, tmdetail, queryCustomerNameId, getCaseTime} from "@/api/caseList";
   import serviceApi from "@/api/serviceApi.config.js";
   import {getUser} from "@/api/user"
@@ -4911,6 +4968,9 @@
       ...mapGetters(["token", "name", "userId"]),
       formatDialogFormjoin () {
         return !!this.dialogFormjoin;
+      },
+      respondentCaseTypes() {
+        return ['注册驳回复审','商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','国际注册驳回复审','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','答复临时驳回/审查意见（境外）','无效宣告复审','著作权行政复议', '咨询', '其他']
       },
       caseTypeAndAppFromto(){
         return (['不予注册复审','商标注册','分割申请','异议','变名变址','转让/移转','续展','删减商品项目','变更注册申请代理机构','更正商标申请事项','注册驳回复审','国际注册驳回复审','撤销商标复审','无效宣告复审','异议答辩','撤三答辩(提供使用证明)','撤销通用名称答辩','参与不予注册复审','无效宣告答辩','撤销复审答辩','撤销三年停止使用申请','撤销成为通用名称注册商标','无效宣告申请','撤回商标评审','行政复议','许可备案','补发商标注册证','补发商标变转续证明','出具优先权证明文件','出具商标注册证明','商标注销','撤回商标申请'].includes(this.ch_caseTypr))&&['内-内', '外-内', '台-内'].includes(this.caseDetailFoemData.appFromto)
@@ -5373,6 +5433,18 @@
           appCnName: [
             { required: true, message: "请选择申请人", trigger: ['change','blur']}
           ],
+          respondentNameCn: [
+            {required: true, message: "请填写被申请人名称中文", trigger: "blur"}
+          ],
+          // respondentAddrCn: [
+          //   {required: true, message: "请填写被申请人地址中文", trigger: "blur"}
+          // ],
+          // respondentNameEn: [
+          //   {required: true, message: "请填写被申请人名称英文", trigger: "blur"}
+          // ],
+          // respondentAddrEn: [
+          //   {required: true, message: "请填写被申请人地址英文", trigger: "blur"}
+          // ],
           appContactPerson: [
             { required: true, message: "请选择联系人", trigger: "change" }
           ],
@@ -5620,6 +5692,7 @@
           trademarkCaseCBWorkgroups: [],
           trademarkCaseLCWorkgroups: [],
           respondentNameCn:'',
+        respondentNameCnList: [],
           transferorCnName:'',
           transferorEnName:'',
           transferorType:'',
@@ -5765,6 +5838,12 @@
       };
     },
     watch: {
+      'caseDetailFoemData.custName': {
+        handler(n) {
+          n && this.queryRespondentNameCn('')
+        },
+        immediate: true
+      },
       // "caseDetailFoemData.appCnAddr":{
       //   handler(val){
       //     if(this.caseDetailFoemData.appGJdq == '中国'){
@@ -6766,7 +6845,11 @@
 
                 id: "srr-title"
               },
-
+              {
+                title: "相对方",
+                state: this.respondentCaseTypes.includes(this.caseDetailFoemData.caseType),
+                id: "xdf-title"
+              },
               {
                 title: "共有人信息",
                 state: this.ch_caseTypr != "商标查询",
@@ -9088,6 +9171,19 @@
         // console.log(111);
       },
 
+      queryRespondentNameCn(keywords) {
+        querylyctListUrl({ custName: this.caseDetailFoemData.custName, pageSize: 200, isCustomer: 1, keywords }).then(res => {
+          this.respondentNameCnList = res.data || []
+        })
+      },
+      onRespondentNameCnChange(val) {
+        const item = this.respondentNameCnList.find(i => i.fullname === val)
+        if (item) {
+          this.$set(this.caseDetailFoemData, 'respondentAddrCn', item.address || '')
+          this.$set(this.caseDetailFoemData, 'respondentNameEn', item.fullnameEn || '')
+          this.$set(this.caseDetailFoemData, 'respondentAddrEn', item.addressEn || '')
+        }
+      },
       lytranappselectChange (respondentNameCn) {
         var e = this.selectData.liyiarr.find(
           ite => ite.fullname == respondentNameCn

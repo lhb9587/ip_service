@@ -446,7 +446,7 @@
       @close="assessVisible = false"
       class="perform-div"
     >
-      <div class="assess-div" v-if="formData.performanceType === 1">
+      <div class="assess-div" v-if="currentAssessType === 1">
         <el-table
           class="assess-table"
           :data="assessData"
@@ -510,7 +510,7 @@
           </el-table-column>
         </el-table>
       </div>
-      <div class="assess-div" v-else-if="formData.performanceType === 3">
+      <div class="assess-div" v-else-if="currentAssessType === 3">
         <el-table
           ref="assessThreeTable"
           class="assess-table"
@@ -527,15 +527,17 @@
             width="160"
           >
             <template slot-scope="scope">
-              <div style="text-align: center;font-weight: bold">
-                {{ performThreeTypes[assessData[scope.row._sourceIndex].performType] }}
+              <div class="perform-type-label">
+                <div>{{ performThreeTypes[assessData[scope.row._sourceIndex].performType][0] }}</div>
+                <div>{{ performThreeTypes[assessData[scope.row._sourceIndex].performType][1] }}</div>
               </div>
             </template>
           </el-table-column>
           <el-table-column
-            prop="element"
-            label="考核要素"
-            min-width="200"
+            prop="assessContentLabel"
+            label="考核内容"
+            width="160"
+            align="center"
           >
             <template slot-scope="scope">
               <template v-if="scope.row.rowKind === 'comment'">
@@ -548,20 +550,39 @@
                 />
                 <span v-else>{{ assessData[scope.row._sourceIndex].element }}</span>
               </template>
-              <template v-else-if="scope.row.rowKind === 'workAssess'">
-                <div class="assess-element-cell">
-                  <span class="assess-content-label">{{ assessData[scope.row._sourceIndex].assessContentLabel }}</span>
-                  <span>{{ assessData[scope.row._sourceIndex].element }}</span>
-                </div>
-              </template>
+              <span
+                v-else-if="scope.row.rowKind === 'workAssess' || scope.row.rowKind === 'assess'"
+                class="assess-content-label"
+              >{{ assessData[scope.row._sourceIndex].assessContentLabel }}</span>
+              <div
+                v-else-if="scope.row.rowKind === 'workOverview'"
+                class="assess-content-label assess-content-label--multiline"
+              >
+                <div>情况概述</div>
+                <div>（个人填写）</div>
+              </div>
+            </template>
+          </el-table-column>
+          <el-table-column
+            prop="element"
+            label="考核要素"
+            min-width="160"
+          >
+            <template slot-scope="scope">
+              <span
+                v-if="scope.row.rowKind === 'workAssess' || scope.row.rowKind === 'assess'"
+                style="white-space: pre-line"
+              >{{ assessData[scope.row._sourceIndex].element }}</span>
               <template v-else-if="scope.row.rowKind === 'workOverview'">
-                <span class="assess-content-label">情况概述（个人填写）</span>
-              </template>
-              <template v-else-if="scope.row.rowKind === 'assess'">
-                <div class="assess-element-cell">
-                  <span class="assess-content-label">{{ assessData[scope.row._sourceIndex].assessContentLabel }}</span>
-                  <span>{{ assessData[scope.row._sourceIndex].element }}</span>
-                </div>
+                <el-input
+                  v-if="formData.userId == $store.getters.userId && performStatus != 1"
+                  type="textarea"
+                  class="work-overview-input"
+                  :autosize="{ minRows: 2, maxRows: 6 }"
+                  v-model="assessData[scope.row._sourceIndex].completeStatus"
+                  placeholder="请填写本月工作情况概述"
+                />
+                <span v-else style="white-space: pre-line">{{ assessData[scope.row._sourceIndex].completeStatus }}</span>
               </template>
             </template>
           </el-table-column>
@@ -575,15 +596,6 @@
                 v-if="scope.row.rowKind === 'workAssess' || scope.row.rowKind === 'assess'"
                 style="white-space: pre-line"
               >{{ assessData[scope.row._sourceIndex].standard }}</span>
-              <template v-else-if="scope.row.rowKind === 'workOverview'">
-                <el-input
-                  v-if="formData.userId == $store.getters.userId && performStatus != 1"
-                  type="textarea"
-                  :autosize="{ minRows: 2, maxRows: 6 }"
-                  v-model="assessData[scope.row._sourceIndex].performTypeDesc"
-                />
-                <span v-else style="white-space: pre-line">{{ assessData[scope.row._sourceIndex].performTypeDesc }}</span>
-              </template>
             </template>
           </el-table-column>
           <el-table-column
@@ -600,7 +612,7 @@
           </el-table-column>
           <el-table-column
             label="整体评定标准"
-            width="200"
+            width="210"
           >
             <template slot-scope="scope">
               <div
@@ -613,7 +625,7 @@
           </el-table-column>
         </el-table>
       </div>
-      <div v-else-if="formData.performanceType === 2">
+      <div v-else-if="currentAssessType === 2">
         <div class="assess-div">
           <el-table
             :data="assessTwoData"
@@ -759,7 +771,7 @@
           </el-card>
           <el-button type="primary" slot="reference" plain>附件管理</el-button>
         </el-popover>
-        <el-button v-if="$store.getters.permissions.includes(436) && performStatus != 1 && (formData.userId != $store.getters.userId)" type="success" plain @click="scoringDetailVisible = true">历史打分明细</el-button>
+        <!-- <el-button v-if="$store.getters.permissions.includes(436) && performStatus != 1 && (formData.userId != $store.getters.userId)" type="success" plain @click="scoringDetailVisible = true">历史打分明细</el-button> -->
         <el-button v-if="performStatus != 1 && (formData.userId != $store.getters.userId)" type="primary" @click="assessSubmit">考核确定</el-button>
         <el-button v-if="performStatus != 1 && (formData.userId == $store.getters.userId)" type="primary" @click="assessSubmit">保存</el-button>
         <el-button type="success" @click="downAssessForm()" style="margin-left: 0px">下载考核表</el-button>
@@ -842,6 +854,7 @@ export default {
         field: ''
       },
       assessVisible: false, // 考核
+      currentAssessType: null, // 当前打开绩效考核弹窗对应的类型（行 type：1/2/3）
       setAssessVisible: false, // 设置考核
       setAssessTwoVisible: false, // 设置考核2
       setAssessThreeVisible: false, // 设置考核3
@@ -876,9 +889,9 @@ export default {
         3: '浮动部分(5%)'
       },
       performThreeTypes: {
-        1: '工作任务(70%)',
-        2: '其他评价(30%)',
-        3: '点评：（上级填写）'
+        1: ['工作任务', '(70%)'],
+        2: ['其他评价', '(30%)'],
+        3: ['点评：', '（上级填写）']
       },
       fileList: [],
       pickerOptions: {
@@ -2044,6 +2057,7 @@ export default {
           }
         }else{
           this.$set(this.formData, 'performances', res.data.performances)
+          this.updatePerformList = false
         }
       })
     },
@@ -2311,7 +2325,8 @@ export default {
         if (res.success){
           this.$message.success(res.message)
           this.assessVisible = false
-          this.updatePerformList && this.queryTalentPersonInfo()
+          this.updatePerformList = true
+          this.queryTalentPersonInfo()
         }
       })
     },
@@ -2323,13 +2338,15 @@ export default {
         if (res.success){
           this.$message.success(res.message)
           this.assessVisible = false
-          this.updatePerformList && this.queryTalentPersonInfo()
+          this.updatePerformList = true
+          this.queryTalentPersonInfo()
         }
       })
     },
     // 填写考核信息
     fillInAssessInfo(row) {
       this.assessInfo = row
+      this.currentAssessType = Number(row.type)
       this.assessMessage = row.performDate ? row.performDate + ' ' + this.formData.talentName + ' 绩效考核表' : ''
       if (row.performItems.length <= 0){
         this.updatePerformList = true
@@ -2337,7 +2354,7 @@ export default {
       }else{
         this.updatePerformList = false
         var performItems = row.performItems.sort((a, b) => a.performType - b.performType);
-        if (this.formData.performanceType === 1){
+        if (this.currentAssessType === 1){
           var assessData = []
           performItems.forEach(item => {
             assessData.push(item)
@@ -2351,7 +2368,7 @@ export default {
           this.assessData = assessData
           // 绩效明细使用
           this.scoringDetailData = assessData
-        } else if (this.formData.performanceType === 3) {
+        } else if (this.currentAssessType === 3) {
           this.assessData = this.normalizePerformItemsThree(performItems)
           this.evaluationStandard = row.evaluationStandard || ''
           this.scoringDetailData = performItems
@@ -2366,7 +2383,7 @@ export default {
       this.performStatus = row.status
       this.performMaterials = row.performMaterials
       this.assessVisible = true
-      if (this.formData.performanceType === 3) {
+      if (this.currentAssessType === 3) {
         this.$nextTick(() => {
           this.mountSummaryEvaluationThree()
         })
@@ -2381,10 +2398,11 @@ export default {
       }
     },
     // 设置考核内容
-    setAssessContent() {
-      if (this.formData.performanceType == 1) {
+    setAssessContent(row) {
+      const assessType = Number(row.type)
+      if (assessType === 1) {
         this.setAssessVisible = true
-      } else if (this.formData.performanceType == 3) {
+      } else if (assessType === 3) {
         this.setAssessThreeVisible = true
       } else {
         this.setAssessTwoVisible = true
@@ -2405,7 +2423,7 @@ export default {
       return rows
     },
     getSummariesThree() {
-      return ['', '', '', '本月评定：', '']
+      return ['', '', '', '', '本月评定：', '']
     },
     canEditSummaryEvaluation() {
       return (
@@ -2421,21 +2439,21 @@ export default {
       }
     },
     mountSummaryEvaluationThree() {
-      if (this.formData.performanceType !== 3 || !this.assessVisible) return
+      if (this.currentAssessType !== 3 || !this.assessVisible) return
       const tableRef = this.$refs.assessThreeTable
       if (!tableRef) return
       const footerTr = tableRef.$el.querySelector('.el-table__footer-wrapper tbody tr')
       if (!footerTr) return
       const cells = footerTr.querySelectorAll('td')
-      if (cells.length < 5) return
-      const weightCell = cells[3]
-      const selectCell = cells[4]
+      if (cells.length < 6) return
+      const labelCell = cells[4]
+      const selectCell = cells[5]
       this.destroySummaryEvaluationThree()
-      for (let i = 0; i < 3; i++) {
+      for (let i = 0; i < 4; i++) {
         cells[i].innerHTML = ''
       }
-      weightCell.style.textAlign = 'right'
-      weightCell.style.verticalAlign = 'middle'
+      labelCell.style.textAlign = 'right'
+      labelCell.style.verticalAlign = 'middle'
       const parent = this
       const canEdit = this.canEditSummaryEvaluation()
       const Vm = Vue.extend({
@@ -2484,17 +2502,26 @@ export default {
       this._summaryEvalVmThree.$mount()
       selectCell.appendChild(this._summaryEvalVmThree.$el)
     },
-    getAssessLabelPrefixThree(performType) {
-      return Number(performType) === 2 ? '考核要素' : '考核内容'
+    parseAssessContentNumThree(label) {
+      const match = (label || '').match(/考核内容(\d+)/)
+      return match ? parseInt(match[1], 10) : 0
     },
-    parseAssessContentLabelThree(element, performType) {
+    resolveAssessContentLabelThree(parsedLabel, existingLabel, nextNum) {
+      const candidates = [parsedLabel, existingLabel].filter(Boolean)
+      for (const candidate of candidates) {
+        const n = this.parseAssessContentNumThree(candidate)
+        if (n >= nextNum.num) {
+          nextNum.num = Math.max(nextNum.num, n + 1)
+          return candidate
+        }
+      }
+      const label = `考核内容${nextNum.num}`
+      nextNum.num++
+      return label
+    },
+    parseAssessContentLabelThree(element) {
       const text = (element || '').trim()
-      const prefix = performType != null
-        ? this.getAssessLabelPrefixThree(performType)
-        : null
-      const tryPrefixes = prefix
-        ? [prefix]
-        : ['考核内容', '考核要素']
+      const tryPrefixes = ['考核内容', '考核要素']
       const matchedPrefix = tryPrefixes.find(p => text.startsWith(p))
       if (!matchedPrefix) {
         return { label: '', element: text }
@@ -2507,8 +2534,7 @@ export default {
     normalizePerformItemsThree(items) {
       const sorted = [...items].sort((a, b) => a.performType - b.performType)
       const result = []
-      const workLabels = ['考核内容1', '考核内容2']
-      let workIndex = 0
+      const nextNum = { num: 1 }
       let i = 0
       while (i < sorted.length) {
         const item = sorted[i]
@@ -2518,10 +2544,15 @@ export default {
           continue
         }
         if (item.performType === 2) {
-          const parsed = this.parseAssessContentLabelThree(item.element, 2)
+          const parsed = this.parseAssessContentLabelThree(item.element)
+          const label = this.resolveAssessContentLabelThree(
+            parsed.label,
+            item.assessContentLabel,
+            nextNum
+          )
           result.push({
             performType: 2,
-            assessContentLabel: parsed.label || item.assessContentLabel || '',
+            assessContentLabel: label,
             element: parsed.label ? parsed.element : item.element || '',
             standard: item.standard || '',
             weight: item.weight
@@ -2533,37 +2564,44 @@ export default {
           if (item.assessContentLabel) {
             result.push({
               performType: 1,
-              assessContentLabel: item.assessContentLabel,
+              assessContentLabel: this.resolveAssessContentLabelThree(
+                '',
+                item.assessContentLabel,
+                nextNum
+              ),
               element: item.element || '',
               standard: item.standard || '',
               weight: item.weight,
-              performTypeDesc: item.performTypeDesc || ''
+              completeStatus: item.completeStatus || ''
             })
             i++
-            workIndex++
             continue
           }
           const isOverview =
             item.rowKind === 'overview' || (item.element || '').includes('情况概述')
           if (isOverview) {
             if (result.length && result[result.length - 1].performType === 1) {
-              result[result.length - 1].performTypeDesc =
-                item.performTypeDesc || item.element || ''
+              result[result.length - 1].completeStatus =
+                item.completeStatus || item.element || ''
             }
             i++
             continue
           }
-          const parsed = this.parseAssessContentLabelThree(item.element, 1)
-          const label = parsed.label || workLabels[workIndex] || `考核内容${workIndex + 1}`
-          let performTypeDesc = item.performTypeDesc || ''
+          const parsed = this.parseAssessContentLabelThree(item.element)
+          const label = this.resolveAssessContentLabelThree(
+            parsed.label,
+            '',
+            nextNum
+          )
+          let completeStatus = item.completeStatus || ''
           if (
             i + 1 < sorted.length &&
             sorted[i + 1].performType === 1 &&
             (sorted[i + 1].rowKind === 'overview' ||
               (sorted[i + 1].element || '').includes('情况概述'))
           ) {
-            performTypeDesc =
-              sorted[i + 1].performTypeDesc || sorted[i + 1].element || ''
+            completeStatus =
+              sorted[i + 1].completeStatus || sorted[i + 1].element || ''
             i += 2
           } else {
             i++
@@ -2574,9 +2612,8 @@ export default {
             element: parsed.element,
             standard: item.standard || '',
             weight: item.weight,
-            performTypeDesc
+            completeStatus
           })
-          workIndex++
           continue
         }
         i++
@@ -2591,7 +2628,7 @@ export default {
       const data = []
       queryPersonPerformanceTemp({ talentCode: this.formData.talentCode }).then(res => {
         // 表格的渲染处理
-        if (this.formData.performanceType === 1){
+        if (this.currentAssessType === 1){
           res.data.forEach(item => {
             data.push(item)
             if (item.performType == 1){
@@ -2604,7 +2641,7 @@ export default {
           this.assessData = data
           // 绩效明细使用
           this.scoringDetailData = res.data
-        } else if (this.formData.performanceType === 3) {
+        } else if (this.currentAssessType === 3) {
           this.assessData = this.normalizePerformItemsThree(res.data)
           this.evaluationStandard = res.evaluationStandard || ''
           this.scoringDetailData = res.data
@@ -2623,21 +2660,27 @@ export default {
 
     },
     objectSpanMethod({ row, column, rowIndex, columnIndex }) {
-      if (this.formData.performanceType === 3) {
+      if (this.currentAssessType === 3) {
         if (row.rowKind === 'comment') {
           if (columnIndex === 1) {
-            return [1, 3]
+            return [1, 4]
           }
-          if (columnIndex === 2 || columnIndex === 3) {
+          if (columnIndex === 2 || columnIndex === 3 || columnIndex === 4) {
             return [0, 0]
           }
         }
         if (row.rowKind === 'workOverview') {
-          if (columnIndex === 3 || columnIndex === 4) {
+          if (columnIndex === 2) {
+            return [1, 2]
+          }
+          if (columnIndex === 3) {
+            return [0, 0]
+          }
+          if (columnIndex === 4 || columnIndex === 5) {
             return [0, 0]
           }
         }
-        if (columnIndex === 3) {
+        if (columnIndex === 4) {
           if (row.rowKind === 'workAssess') {
             return { rowspan: 2, colspan: 1 }
           }
@@ -2650,7 +2693,7 @@ export default {
           const _col = _row > 0 ? 1 : 0
           return { rowspan: _row, colspan: _col }
         }
-        if (columnIndex === 4) {
+        if (columnIndex === 5) {
           if (this.isOverallStandardFirstRowThree(rowIndex)) {
             return {
               rowspan: this.tableDisplayDataThree.length,
@@ -2669,7 +2712,7 @@ export default {
           colspan: _col
         };
       }
-      if (this.formData.performanceType === 1){
+      if (this.currentAssessType === 1){
         if (row.performType == 1){
           if (rowIndex % 2 === 1) {
             if (columnIndex === 1) {
@@ -2704,7 +2747,7 @@ export default {
     mergeColumn() {
       const spanOneArr = [];
       let concatOne = 0;
-      if (this.formData.performanceType === 3) {
+      if (this.currentAssessType === 3) {
         this.tableDisplayDataThree.forEach((displayRow, index) => {
           const performType = this.assessData[displayRow._sourceIndex].performType
           const prevPerformType =
@@ -2736,7 +2779,7 @@ export default {
       return spanOneArr;
     },
     getSummaries(param) {
-      const khIndex = this.formData.performanceType === 1 ? 3 : 4
+      const khIndex = this.currentAssessType === 1 ? 3 : 4
       const { columns, data } = param;
       const sums = [];
       let fraction = 0;
@@ -2779,7 +2822,7 @@ export default {
     // 绩效考核内容提交
     assessSubmit() {
       var performItems = []
-      if (this.formData.performanceType === 1){
+      if (this.currentAssessType === 1){
         this.assessData.forEach((item,index) => {
           // 工作任务
           if (item.performType == 1) {
@@ -2791,7 +2834,7 @@ export default {
             performItems.push(item)
           }
         })
-      } else if (this.formData.performanceType === 3) {
+      } else if (this.currentAssessType === 3) {
         performItems = this.assessData
       } else {
         performItems = this.assessData.concat(this.assessTwoData)
@@ -2804,14 +2847,15 @@ export default {
         finalScore: this.assessInfo.finalScore,
         performItems: performItems
       }
-      if (this.formData.performanceType === 3) {
+      if (this.currentAssessType === 3) {
         submitData.evaluationStandard = this.evaluationStandard
       }
       upsertPersonPerformance(submitData).then(res => {
         if (res.success){
           this.$message.success(res.message)
           this.assessVisible = false
-          this.updatePerformList && this.queryTalentPersonInfo()
+          this.updatePerformList = true
+          this.queryTalentPersonInfo()
         }
       })
     },
@@ -2853,7 +2897,7 @@ export default {
   },
   watch: {
     assessVisible(val) {
-      if (val && this.formData.performanceType === 3) {
+      if (val && this.currentAssessType === 3) {
         this.$nextTick(() => {
           this.mountSummaryEvaluationThree()
         })
@@ -3192,15 +3236,31 @@ export default {
     padding:  5px 0;
   }
 }
-.assess-element-cell {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-}
 .assess-content-label {
+  display: inline-block;
   font-weight: bold;
   color: #303133;
   line-height: 1.4;
+  text-align: center;
+}
+.assess-content-label--multiline {
+  display: block;
+  > div {
+    display: block;
+    line-height: 1.5;
+  }
+}
+.perform-type-label {
+  text-align: center;
+  font-weight: bold;
+  color: #303133;
+  line-height: 1.5;
+  > div {
+    display: block;
+  }
+}
+.work-overview-input {
+  width: 100%;
 }
 .weight-cell {
   display: flex;
@@ -3217,7 +3277,7 @@ export default {
     margin: 0 0 6px;
   }
 }
-/deep/ .el-table__footer-wrapper tbody td:nth-child(4) {
+/deep/ .el-table__footer-wrapper tbody td:nth-child(5) {
   text-align: right;
   font-size: 14px;
   font-weight: bold;

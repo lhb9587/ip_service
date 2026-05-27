@@ -715,9 +715,14 @@
                 {{caseDetailFormData.divcaseList&&caseDetailFormData.divcaseList.join(';')}}
               </el-form-item>
             </el-col>
-            <el-col :span="12">
+            <el-col :span="caseType == '海牙国际申请' ? 6 : 12">
               <el-form-item label="要求提交IDS:">
                 {{+caseDetailFormData.needIds ? '是' : '否'}}
+              </el-form-item>
+            </el-col>
+            <el-col :span=6 v-if="caseType == '海牙国际申请'">
+              <el-form-item label="DAS码:">
+                {{ caseDetailFormData.dasCode }}
               </el-form-item>
             </el-col>
           </el-row>
@@ -889,12 +894,12 @@
 
               </el-row>
               <el-row class="">
-                <el-col :span="caseType == '普通新申请' || caseType == 'PCT国家阶段' ? 6 : 12">
+                <el-col v-if="caseType !== '普通新申请' " :span="caseType == '普通新申请' || caseType == 'PCT国家阶段' ? 6 : 12">
                   <el-form-item label="要求DAS:">
                     {{+caseDetailFormData.das ? '是' : '否'}}
                   </el-form-item>
                 </el-col>
-                <el-col :span="6" v-if="caseDetailFormData.appFromto == '内-内'">
+                <el-col :span="12" v-if="caseDetailFormData.appFromto == '内-内'">
                   <el-form-item label="预审案件:">
                     {{+caseDetailFormData.preexamine ? '是' : '否'}}
                   </el-form-item>
@@ -1166,11 +1171,23 @@
             </el-col>
           </el-row>
           <el-row>
-            <el-col :span="24">
+            <el-col :span="caseType == '普通新申请' || caseType == 'PCT国际申请' ? 12 : 24">
               <el-form-item label="需要优先权期限提醒:">
                 {{caseDetailFormData.applyExternally ? '是' : '否'}}
               </el-form-item>
             </el-col>
+            <template v-if="caseType == '普通新申请' || caseType == 'PCT国际申请'">
+              <el-col :span="caseDetailFormData.das == 1 ? 6 : 12"" >
+                <el-form-item label="要求DAS:">
+                  {{caseDetailFormData.das ? '是' : '否'}}
+                </el-form-item>
+              </el-col>
+              <el-col :span="6" v-if="caseDetailFormData.das == 1">
+                <el-form-item label="DAS码:">
+                  {{caseDetailFormData.dasCode }}
+                </el-form-item>
+              </el-col>
+            </template>
           </el-row>
         </div>
 
@@ -2874,7 +2891,36 @@
 
 
         </div>
-
+        <!--      相对方-->
+        <div v-if="respondentCaseTypes.includes(caseType)">
+          <el-row>
+            <span class="header-info" id="xdf-title">相对方</span>
+          </el-row>
+          <el-row class="border-top">
+            <el-col :span="12">
+              <el-form-item label="被申请人名称中文:">
+              {{ caseDetailFormData.respondentNameCn }}
+            </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="被申请人地址中文:">
+              {{ caseDetailFormData.respondentAddrCn }}
+            </el-form-item>
+            </el-col>
+          </el-row>
+          <el-row>
+            <el-col :span="12">
+              <el-form-item label="被申请人名称英文:">
+              {{ caseDetailFormData.respondentNameEn }}
+            </el-form-item>
+            </el-col>
+            <el-col :span="12">
+              <el-form-item label="被申请人地址英文:">
+                {{ caseDetailFormData.respondentAddrEn }}
+              </el-form-item>
+            </el-col>
+          </el-row>
+        </div>
         <!--      母案信息-->
         <div v-if="caseType == '香港登记' || caseType == '澳门登记'">
           <el-row>
@@ -3208,6 +3254,9 @@
       caseDetailFormData: {}
     },
     computed: {
+      respondentCaseTypes() {
+        return ['注册驳回复审','商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','国际注册驳回复审','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','答复临时驳回/审查意见（境外）','无效宣告复审','著作权行政复议', '咨询', '其他']
+      },
       isShowDCF(){
         const arrayA = [102,122,143]
         const arrayB = this.caseDetailFormData.designatedCountryList || []

@@ -466,7 +466,9 @@ export default {
       });
     },
     queryMaterialTypeByDocId(doctId) {
-      queryMaterialTypeByDocId({ doctId ,taskType:this.taskType}).then(res => {
+      console.log(this.caseList,'this.caseList');
+      
+      queryMaterialTypeByDocId({ doctId ,taskType:this.taskType,caseTypeId:this.caseList[0].caseTypeId}).then(res => {
         this.materialTypeByDocIdList = res.data;
         if(this.patentOneMaterial) {
           this.submitData.materialTypeId = 301509;

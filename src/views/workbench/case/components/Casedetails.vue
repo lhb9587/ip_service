@@ -268,8 +268,6 @@
                               <el-form-item class="postInfo-container-item" label="标签:">
                                 <TagsModal
                                   :case-id="caseDetailFoemData.caseId"
-                                  :batch-mode="$route.query.operate === 'many'"
-                                  :case-id-list="mainCaseIds"
                                   :cust-id="caseDetailFoemData.custId"
                                   :case-tag-info="{ tagPath: tagPath, tagPathList: caseDetailFoemData.caseTagPathList }"
                                   @change="tagPath = $event"
@@ -3492,6 +3490,64 @@
                       </el-col>
                     </el-row>
                   </template>
+                  <!-- 被申请人信息 -->
+                   <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+                    <el-col :span="24" class="tilteSpan">
+                      <span id="xdf-title">相对方</span>
+                    </el-col>
+                  </el-row>
+                  <el-row v-if="respondentCaseTypes.includes(caseDetailFoemData.caseType)">
+                    <el-col :span="24" class="form-con-item">
+                      <el-row class="form-border">
+                        <el-col :span="24">
+                          <el-row class="">
+                            <el-col :span="12">
+                              <el-form-item label="被申请人名称中文:" prop="respondentNameCn" class="postInfo-container-item">
+                                <el-select
+                                  v-model="caseDetailFoemData.respondentNameCn"
+                                  filterable
+                                  remote
+                                  allow-create
+                                  default-first-option
+                                  placeholder="请输入被申请人名称中文"
+                                  :remote-method="queryRespondentNameCn"
+                                  @change="onRespondentNameCnChange"
+                                  style="width:100%">
+                                  <el-option
+                                    v-for="item in respondentNameCnList"
+                                    :key="item.conId"
+                                    :label="item.fullname"
+                                    :value="item.fullname">
+                                  </el-option>
+                                </el-select>
+                              </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                              <el-form-item label="被申请人地址中文:" prop="respondentAddrCn" class="postInfo-container-item">
+                                <el-input v-model="caseDetailFoemData.respondentAddrCn" placeholder="请填写被申请人地址中文"></el-input>
+                              </el-form-item>
+                            </el-col>
+                          </el-row>
+                        </el-col>
+                      </el-row>
+                      <el-row class="form-border" style="border-top: none;">
+                        <el-col :span="24">
+                          <el-row class="">
+                            <el-col :span="12">
+                              <el-form-item label="被申请人名称英文:" prop="respondentNameEn" class="postInfo-container-item">
+                                <el-input v-model="caseDetailFoemData.respondentNameEn" placeholder="请填写被申请人名称英文"></el-input>
+                              </el-form-item>
+                            </el-col>
+                            <el-col :span="12">
+                              <el-form-item label="被申请人地址英文:" prop="respondentAddrEn" class="postInfo-container-item">
+                                <el-input v-model="caseDetailFoemData.respondentAddrEn" placeholder="请填写被申请人地址英文"></el-input>
+                              </el-form-item>
+                            </el-col>
+                          </el-row>
+                        </el-col>
+                      </el-row>
+                    </el-col>
+                  </el-row>
                   <el-row v-if="caseDetailFoemData.appFromto=='内-外'||caseDetailFoemData.appFromto=='外-外'">
                     <el-col class="tilteSpan" :span="24">
                       <span id='out-title'>境外信息</span>
@@ -4593,6 +4649,40 @@
       <poppingTimeLimit v-if="poppingTimeLimitState" disabled @cancel="closePoppingTimeLimit"
                         :list="caseData"></poppingTimeLimit>
     </el-dialog>
+
+    <!--  冲突  -->
+    <el-dialog :close-on-click-modal="false" title="请注意:" :visible.sync="dialogcheckChongTuVisible" class="chongtuTitle">
+      <el-row style="margin: 10px 5px">
+        <el-col :span="24">
+          <span
+            style="font-size:17px;color: #ff0000">被申请人与下列我方代理过的客户/申请人名称相同/近似，请提交客户管理组刘佳进行冲突检索，审核通过后方可继续立案。</span>
+        </el-col>
+      </el-row>
+      <el-table :data="gridData">
+        <el-table-column property="agentNum" label="案件文号"></el-table-column>
+        <el-table-column property="caseType" label="案件类型"></el-table-column>
+        <el-table-column property="caseName" label="案件名称">
+          <template slot-scope="scope">
+            <span v-html="highlightKey(scope.row.caseName, scope.row.keyName)"></span>
+          </template>
+        </el-table-column>
+        <el-table-column property="droitNumber" label="权利号"></el-table-column>
+        <el-table-column property="applicantName" label="申请人">
+          <template slot-scope="scope">
+            <span v-html="highlightKey(scope.row.applicantName, scope.row.keyName)"></span>
+          </template>
+        </el-table-column>
+        <el-table-column property="custName" label="客户名称">
+          <template slot-scope="scope">
+            <span v-html="highlightKey(scope.row.custName, scope.row.keyName)"></span>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div slot="footer" class="dialog-footer">
+        <el-button @click="dialogcheckChongTuVisible = false">取 消</el-button>
+        <el-button v-if="caseDetailFoemData.ctAudit !== 1" type="primary" @click="dialogcheckChongTuBtn">提 交</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -4633,7 +4723,9 @@ import {
   queryReplaceAgencyName,
   checkImageInstruction,
   queryReginList,
-  splitAddress
+  splitAddress,
+  chongtuTest,
+  tijiao,
 } from "@/api/caseDetail";
   import {getUser} from "@/api/user"
   import {
@@ -4650,7 +4742,7 @@ import {
   import ChangeOfNameAndAddress from "./ChangeOfNameAndAddress";
   import trademarkTable from "./trademarkTable.vue";
   import {scrollTo} from "@/utils/scroll-to";
-import { querycustSelectClass, queryCustGroup, searchTmUrl, queryCaseAppExamine } from '@/api/customerList.js'
+import { querycustSelectClass, queryCustGroup, searchTmUrl, queryCaseAppExamine, querylyctListUrl } from '@/api/customerList.js'
   import Pagination from "@/components/Pagination"; // secondary package based on el-pagination
   import DataUploadOrSelect from "@/components/DataUploadOrSelect";
   import ElectronicArchives from "@/views/workbench/case/components/ElectronicArchives.vue";
@@ -4724,9 +4816,15 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
   export default {
     name: "Casedetails",
     computed: {
+      chongtuAuditViewCom(){
+        return !!this.chongtuAuditView
+      },
       ...mapGetters(["token", "name", "userId"]),
       formatDialogFormjoin() {
         return !!this.dialogFormjoin;
+      },
+      respondentCaseTypes() {
+        return ['注册驳回复审','商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','国际注册驳回复审','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','答复临时驳回/审查意见（境外）','无效宣告复审','著作权行政复议', '咨询', '其他']
       },
       caseTypeAndAppFromto() {
         return (['答复临时驳回/审查意见（境外）','提供使用声明/证据（境外）','不予注册复审', '商标注册', '分割申请', '异议', '变名变址', '转让/移转', '续展', '删减商品项目', '变更注册申请代理机构', '更正商标申请事项', '注册驳回复审', '国际注册驳回复审', '撤销商标复审', '异议答辩', '撤三答辩(提供使用证明)', '撤销通用名称答辩', '参与不予注册复审', '无效宣告答辩', '撤销复审答辩', '撤销三年停止使用申请', '撤销成为通用名称注册商标', '无效宣告申请', '撤回商标评审', '行政复议', '许可备案', '补发商标注册证', '补发商标变转续证明', '出具优先权证明文件', '出具商标注册证明', '商标注销', '撤回商标申请'].includes(this.caseDetailFoemData.caseType)) && ['内-内', '外-内', '台-内'].includes(this.caseDetailFoemData.appFromto)
@@ -4885,6 +4983,12 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
       };
 
       return {
+        chongtuAuditReason: '',
+        chongtuAuditView: false,
+        gridData: [],
+        chongtuType: '',
+        chongtuForwordType: '',
+        dialogcheckChongTuVisible: false,
         debouncedFunc:null,
         address: {
           province: '',
@@ -5115,6 +5219,18 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
           appCnName: [
             {required: true, message: "请选择申请人", trigger: "change"}
           ],
+          respondentNameCn: [
+            {required: true, message: "请填写被申请人名称中文", trigger: "blur"}
+          ],
+          // respondentAddrCn: [
+          //   {required: true, message: "请填写被申请人地址中文", trigger: "blur"}
+          // ],
+          // respondentNameEn: [
+          //   {required: true, message: "请填写被申请人名称英文", trigger: "blur"}
+          // ],
+          // respondentAddrEn: [
+          //   {required: true, message: "请填写被申请人地址英文", trigger: "blur"}
+          // ],
           tmDesignDeclare: [
             {validator: tmDesignDeclare, trigger: ['blur', 'change'] , required: true,}
           ],
@@ -5198,6 +5314,7 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
             }
           ]
         },
+        respondentNameCnList: [],
         goodsData: [],
         goodsTreeProps: {
           label: function (data, node) {
@@ -5400,6 +5517,12 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
       this.debouncedFunc = this.debounce(this.debounceSplitAddress, 1000);
     },
     watch: {
+      'caseDetailFoemData.custName': {
+        handler(n) {
+          n && this.queryRespondentNameCn('')
+        },
+        immediate: true
+      },
       // "caseDetailFoemData.appCnAddr":{
       //   handler(val){
       //     if(this.caseDetailFoemData.appGJdq == '中国'){
@@ -5537,6 +5660,56 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
       this.provinceList =await this.queryRegionList(1)
     },
     methods: {
+      checkChongTuSet(chongData, type, forwordType) {
+        this.gridData = chongData.length > 500 ?chongData.splice(0, 500) : chongData
+        this.chongtuType = type
+        this.chongtuForwordType = forwordType
+        this.dialogcheckChongTuVisible = true
+      },
+      dialogcheckChongTuBtn() {
+        tijiao({
+          taskType: 1,
+          taskId: this.caseDetailFoemData.taskId
+        }).then(async res => {
+          this.$message.success('提交成功!')
+          await this.updateCtAudit()
+          this.dialogcheckChongTuVisible = false
+        })
+      },
+      async updateCtAudit() {
+        this.goNext()
+      },
+      highlightKey(text, key) {
+        if (!key || !text || text.indexOf(key) === -1) {
+          // 没有匹配到就原样返回
+          return text;
+        }
+        const regex = new RegExp(key, 'gi');
+        return text.replace(regex, `<span style="color: red;">${key}</span>`);
+      },
+      async chongtuTestFunc(flag) {
+        if (this.caseDetailFoemData.ctAudit && !flag) return false
+        const data = this.$commonUtils.cleanNullAttr(this.caseDetailFoemData)
+        delete data.status
+
+        return new Promise(resolve => {
+          chongtuTest({
+            taskType: 1,
+            taskId: this.caseDetailFoemData.taskId,
+            draftNumber: this.caseDetailFoemData.agentNum,
+            ...data
+          }).then(res => {
+            if (res.messageType == 10) {
+              this.checkChongTuSet(res.data.length > 500 ? res.data.splice(0, 500) : res.data, '', '')
+              resolve(true)
+            } else {
+              resolve(false)
+            }
+          }).catch(err => {
+            resolve(true)
+          })
+        })
+      },
       formatCaseTagPath(caseTagPathList) {
         if (!Array.isArray(caseTagPathList) || !caseTagPathList.length) {
           return ''
@@ -6037,6 +6210,11 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
                 },
                 {title: "客户信息", state: true, id: "khxx-title"},
                 {title: "申请人信息", state: true, id: "sqrxx-title"},
+                {
+                  title: "相对方",
+                  state: this.respondentCaseTypes.includes(this.caseDetailFoemData.caseType),
+                  id: "xdf-title"
+                },
                 {
                   title: "境外信息",
                   state: this.caseDetailFoemData.appFromto=='内-外' || this.caseDetailFoemData.appFromto=='外-外',
@@ -7851,6 +8029,19 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
           );
         };
       },
+      queryRespondentNameCn(keywords) {
+        querylyctListUrl({ custName: this.caseDetailFoemData.custName, pageSize: 200, isCustomer: 1, keywords }).then(res => {
+          this.respondentNameCnList = res.data || []
+        })
+      },
+      onRespondentNameCnChange(val) {
+        const item = this.respondentNameCnList.find(i => i.fullname === val)
+        if (item) {
+          this.$set(this.caseDetailFoemData, 'respondentAddrCn', item.address || '')
+          this.$set(this.caseDetailFoemData, 'respondentNameEn', item.fullnameEn || '')
+          this.$set(this.caseDetailFoemData, 'respondentAddrEn', item.addressEn || '')
+        }
+      },
       clearTmMessage(e) {
         console.log(11, e)
         this.caseDetailFoemData.respondentAgency = ''
@@ -8342,6 +8533,7 @@ import { debounce, fomat_qh, getLanglist, isInputAll } from '../../../../utils'
             }
           });
         } else {
+          if (this.respondentCaseTypes.includes(this.caseDetailFoemData.caseType) && await this.chongtuTestFunc(true)) return ;
           this.$refs["postForm"].validate(valid => {
             if (valid) {
 

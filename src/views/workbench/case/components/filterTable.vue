@@ -3452,7 +3452,15 @@ export default {
           this.getSelectedRows(),
           this.getCurFilterId(this.pageTitle)
         );
+        //4696-根据案件类型限制上传的文件类型-给caseArray添加caseTypeId
         let caseList = this.getLanglist(list.map(item => (item.caseArray || [])));
+        const caseTypeId = list && list.length ? list[0].caseTypeId : undefined;
+        if (caseTypeId !== undefined && caseTypeId !== null) {
+          caseList = (caseList || []).map(item => ({
+            ...item,
+            caseTypeId: item && item.caseTypeId !== undefined && item.caseTypeId !== null ? item.caseTypeId : caseTypeId
+          }));
+        }
         return this.unique(caseList, 'caseId')
       } else {
         return this.unique( this.getSelectedRows(), 'caseId')

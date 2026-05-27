@@ -282,6 +282,9 @@
       }
     },
     computed: {
+      respondentCaseTypes() {
+        return ['注册驳回复审','商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','国际注册驳回复审','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','答复临时驳回/审查意见（境外）','无效宣告复审','著作权行政复议', '咨询', '其他']
+      },
       chongtuAuditViewCom(){
         return !!this.chongtuAuditView
       },
@@ -468,6 +471,11 @@
               title: '专利基础信息',
               state: ['咨询', '许可备案', '翻译', '欧洲专利国家生效'].includes(this.caseDetailFormData.caseType),
               id: 'patent-base-title'
+            },
+            {
+              title: "相对方",
+              state: this.respondentCaseTypes.includes(this.caseDetailFormData.caseType),
+              id: "xdf-title"
             },
             {
               title: '母案信息',
@@ -715,7 +723,7 @@
             checkChongTu
           }
         }
-        if (await this.chongtuTestFunc()) return ;
+        if (this.respondentCaseTypes.includes(this.caseDetailFormData.caseType) && await this.chongtuTestFunc(true)) return ;
         delete data.checkChongTu
         heighCreditUrl(data)
           .then(response => {
