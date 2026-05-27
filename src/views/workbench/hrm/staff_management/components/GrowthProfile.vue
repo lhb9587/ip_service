@@ -854,7 +854,7 @@ export default {
         field: ''
       },
       assessVisible: false, // 考核
-      currentAssessType: null, // 当前打开绩效考核弹窗对应的类型（行 type：1/2/3）
+      currentAssessType: 2, // 当前打开绩效考核弹窗对应的类型（行 type：1/2/3），无值默认 2
       setAssessVisible: false, // 设置考核
       setAssessTwoVisible: false, // 设置考核2
       setAssessThreeVisible: false, // 设置考核3
@@ -1699,6 +1699,10 @@ export default {
   mounted() {
   },
   methods: {
+    resolveAssessType(type) {
+      const n = Number(type)
+      return n === 1 || n === 2 || n === 3 ? n : 2
+    },
     getMatchedValue(value) {
       const regex = /[\uFF1B;]/g;
       return regex.test(value) ? '未自评' : value;
@@ -2346,7 +2350,7 @@ export default {
     // 填写考核信息
     fillInAssessInfo(row) {
       this.assessInfo = row
-      this.currentAssessType = Number(row.type)
+      this.currentAssessType = this.resolveAssessType(row.type)
       this.assessMessage = row.performDate ? row.performDate + ' ' + this.formData.talentName + ' 绩效考核表' : ''
       if (row.performItems.length <= 0){
         this.updatePerformList = true
@@ -2399,7 +2403,7 @@ export default {
     },
     // 设置考核内容
     setAssessContent(row) {
-      const assessType = Number(row.type)
+      const assessType = this.resolveAssessType(row.type)
       if (assessType === 1) {
         this.setAssessVisible = true
       } else if (assessType === 3) {
@@ -2625,6 +2629,7 @@ export default {
     },
     // 获取考核内容
     queryPersonPerformanceTemp(row){
+      this.currentAssessType = this.resolveAssessType(row && row.type)
       const data = []
       queryPersonPerformanceTemp({ talentCode: this.formData.talentCode }).then(res => {
         // 表格的渲染处理
