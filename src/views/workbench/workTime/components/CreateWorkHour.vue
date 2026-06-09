@@ -397,6 +397,14 @@
                         placeholder="[审核备注]:"></el-input>
             </el-row>
           </div>
+          <div class="divider">
+          <span class="">
+              赠送礼品
+          </span>
+          </div>
+          <el-row style="border: none">
+            <el-input type="textarea" v-model="formTime.giveAsGift" readonly :autosize="{ minRows: 2, maxRows: 2 }"></el-input>
+          </el-row>
         </el-form>
         <div class="divider">
           <span class="">
@@ -1074,6 +1082,17 @@
                         placeholder="[审核备注]:"></el-input>
             </el-row>
           </div>
+          <div class="divider">
+          <span class="">
+              赠送礼品
+          </span>
+          </div>
+          <el-row style="width: 100%;border-bottom: none">
+            <el-input style="width: 100%;" type="textarea" maxlength="2000"
+                      v-model="formTime.giveAsGift"
+                      :autosize="{ minRows: 2, maxRows: 2 }"
+                      placeholder="[赠送礼品]:"></el-input>
+          </el-row>
         </el-form>
         <div>
           <el-upload
@@ -1277,6 +1296,7 @@
           approvedAmountCust: 0,
           approvedDesc: undefined,
           custIntroductor: undefined,
+          giveAsGift: undefined,
           workContent: undefined,
           userId: this.$store.getters.userId,
           materialIdList: [],

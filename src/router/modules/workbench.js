@@ -928,7 +928,6 @@ const workRouter = {
         title: '流程',
         // icon: 'icon/案件21@2x.png',
         icon:'tree',
-        permissions: [19, 20],
         // keepAlive: true
       },
       redirect: '/workbench/technological_process/officialSubmission',
@@ -1048,6 +1047,25 @@ const workRouter = {
             // keepAlive: true,
               icon: '任务'
           }
+        },
+        {
+          path: 'investigationProtection',
+          component: () => import('@/views/workbench/investigation_protection'),
+          name: 'investigationProtection',
+          meta: {
+            title: '调查保护',
+            icon: '任务'
+          }
+        },
+        {
+          path: 'investigation-protection',
+          component: () => import('@/views/workbench/investigation_protection'),
+          name: 'investigation-protection',
+          meta: {
+            title: '调查保护',
+            icon: '任务'
+          },
+          hidden: true
         },
 
         {
@@ -2864,6 +2882,26 @@ const workRouter = {
       meta: {
         title: '合同详情',
         icon: '合同',
+      },
+      hidden: true
+    },
+    {
+      path: 'investigation-protection',
+      name: 'investigation-protection-todo-detail',
+      component: () => import('@/views/workbench/investigation_protection'),
+      meta: {
+        title: '\u8c03\u67e5\u4fdd\u62a4',
+        icon: '\u8c03\u67e5\u4fdd\u62a4'
+      },
+      hidden: true
+    },
+    {
+      path: 'investigation_protection_detail/:invtId',
+      name: 'investigation_protection_detail',
+      component: () => import('@/views/workbench/investigation_protection/detail'),
+      meta: {
+        title: '\u8c03\u67e5\u4fdd\u62a4\u8be6\u60c5',
+        icon: '\u8c03\u67e5\u4fdd\u62a4'
       },
       hidden: true
     },

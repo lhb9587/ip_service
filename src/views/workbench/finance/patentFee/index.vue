@@ -177,7 +177,7 @@
       :before-close="closeDialog"
     >
       <createPatentFee @close="closeDialog" @daoRuCao="daoRuCao" :sign="sign"
-                       :payListType="queryModuleData.payListType"></createPatentFee>
+                       :payListType="currentImportPayListType"></createPatentFee>
     </el-drawer>
 
     <SelectOption :buss-id="bussId" v-if="selectionOptionState" :dialog-visible="selectionOptionState"
@@ -327,7 +327,8 @@
         currentPageSize: 0,
         queryModuleData: {},
         editData: {},
-        payListSelectData: {}
+        payListSelectData: {},
+        currentImportPayListType: ''
       }
     },
     watch: {
@@ -555,6 +556,7 @@
       },
       addDaoru() {
         if (this.getSelectedRows().length) {
+          this.currentImportPayListType = this.getSelectedRows()[0].payListType
           this.drawerView = true
           this.sign = 'createCao'
           this.title = '导入草单'

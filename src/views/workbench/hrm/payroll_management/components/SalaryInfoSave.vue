@@ -24,7 +24,7 @@
         <el-row class="first-row">
           <el-col :span="12">
             <el-form-item label="核算结果组织名称：" class="postInfo-container-item">
-              <el-input v-model="dataInfo.kingDeeDepartment"></el-input>
+              <el-input v-model="dataInfo.kingDeeGroupName"></el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">

@@ -156,6 +156,7 @@
               <el-menu-item index="1-2-4"  v-if="pageTitle==='案件管理'">内部往来</el-menu-item>
               <el-menu-item index="1-2-5"  v-if="pageTitle==='案件管理'">外代所往来</el-menu-item>
               <el-menu-item index="1-2-6"  v-if="pageTitle==='案件管理'">对方当事人往来</el-menu-item>
+              <el-menu-item index="1-2-9"  v-if="pageTitle==='案件管理'">调查保护</el-menu-item>
               <!--<el-menu-item index="1-2-7">特批预立卷审批</el-menu-item>-->
             </el-submenu>
             <el-submenu index="1-3" v-allow="154">
@@ -414,6 +415,11 @@
       </el-table>
       <BulkUploadFile :taskType="taskType" v-if="uploadState" :uploadType="uploadType" :curCaseId="getSelectedRows().map(item=>item.caseId)" @changeFalse="closeSelect"></BulkUploadFile>
     </el-dialog>
+    <investigation-protection-dialog
+      :visible.sync="investigationProtectionVisible"
+      :case-data="investigationProtectionCase"
+      @saved="queryCaseList"
+    />
       <litigationSubmission :taskType="2" :business="business" v-if="submissionState" :submissionState="submissionState" :submissionType="submissionType" :multipleSelection="multipleSelectionCaseArray" :curCaseId="multipleSelectionCaseArray.map(item=>item.caseId)" @changeFalse="closeSelect"></litigationSubmission>
     <SelectOption :buss-id="bussId" v-if="selectionOptionState" :dialog-visible="selectionOptionState" @cancel="closeSelect" :idArray="getSelectedRows().map(item=>item[getCurFilterId(pageTitle)])" :defaultMultipleSelect="preferenceList.map(i=>i.title)" :exportType="exportType" :exportQueryModel="exportQueryModel"></SelectOption>
     <EmitSearch @undateSearch="undateSearch"></EmitSearch>
@@ -503,6 +509,7 @@ import { downLoadAll ,throttle} from "@/utils";
 import seeCaseDetail from '@/views/workbench/case/components/ManualIdentification/seeCaseDetail'
 import {browserBehavior} from '../../components/browserBehavior'
 import Bus from "../../../../../utils/Bus";
+import InvestigationProtectionDialog from '@/views/workbench/case/components/InvestigationProtectionDialog'
 export default {
   props: {
     field:{
@@ -539,6 +546,8 @@ export default {
       tableHeader=JSON.parse(localStorage.getItem('tableHeader')).find(item=>item.name==this.$options.name+this.$route.name+this.field).tableHeader
     }
     return {
+      investigationProtectionVisible: false,
+      investigationProtectionCase: {},
       caseType: '',
       isSuggestion: false,
       updateWkgData: {},
@@ -1325,6 +1334,10 @@ export default {
         this.uploadType = "特批预立卷审批";
         // this.queryCaseList();
       }
+      if (key === "1-2-9") {
+        this.openInvestigationProtection()
+        return
+      }
       if (key === "批量操作") {
         this.selectionState = true;
         this.multipleTypeText = "批量操作";
@@ -1388,6 +1401,27 @@ export default {
         // this.multipleSelection = []
         this.selectionOptionState=true
       }
+    },
+    openInvestigationProtection() {
+      if (this.pageTitle !== '案件管理') {
+        this.$message.warning('请在案件管理中创建调查保护')
+        return
+      }
+      const selectedRows = this.getSelectedRows()
+      if (!selectedRows.length) {
+        this.$message.error('请先选择一个案件！')
+        return
+      }
+      if (selectedRows.length > 1) {
+        this.$message.error('只能选择一个案件！')
+        return
+      }
+      if (!selectedRows[0].caseId) {
+        this.$message.error('选中案件缺少caseId，无法创建调查保护')
+        return
+      }
+      this.investigationProtectionCase = selectedRows[0]
+      this.investigationProtectionVisible = true
     },
     toExamine() {
       this.selectionState = true;
@@ -3239,7 +3273,8 @@ export default {
     litigationOfficial,
     MyTabs,
     createTimeLimit,
-    CaseInvestigators
+    CaseInvestigators,
+    InvestigationProtectionDialog
   }
 };
 </script>

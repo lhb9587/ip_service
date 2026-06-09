@@ -23,7 +23,7 @@
           </template>
 </el-table-column>
 </el-table> -->
-    <el-form ref="submission" label-width="206px">
+    <el-form ref="submission" label-width="206px" :model="patentWritingDetail" :rules="rules">
       <!-- <el-row style="border-right: 1px solid #EBEEF5;border-top: 1px solid #EBEEF5">
                 <el-form-item label="五书Word文件:">
                   <el-upload
@@ -81,6 +81,16 @@
               v-model="patentWritingDetail.tltTypeId" filterable
               :disabled="dialogType === 'view'" @change="changeTltType">
               <el-option v-for="item in caseTimeLimit" :key="item.tltTypeId" :label="item.typeName" :value="item.tltTypeId">
+              </el-option>
+            </el-select>
+        </el-form-item>
+      </el-row>
+      <el-row style="">
+        <el-form-item label="撰写阶段:" prop="writingStage">
+            <el-select default-first-option :clearable='false' placeholder="请选择"
+              v-model="patentWritingDetail.writingStage" filterable
+              :disabled="dialogType === 'view'">
+              <el-option v-for="item in patentWritingStageList" :key="item.id" :label="item.typeName" :value="item.id">
               </el-option>
             </el-select>
         </el-form-item>
@@ -184,7 +194,8 @@ import {
   queryPatentWritingDetail,
   patentWritingappExamine,
   queryPatentWritingReturnReasonList,
-  savePatentWriting
+  savePatentWriting,
+  queryPatentWritingReturnReasonCurrentList
 } from "@/api/patentWriting";
 
 import { creatematerial } from '@/api/ipServiceApi.config.js'
@@ -201,8 +212,19 @@ export default {
   computed: {
 
   },
+  watch: {
+    'patentWritingDetail.writingStage': {
+      handler(val) {
+        val && queryPatentWritingReturnReasonList({ parentId: val }).then(res => {
+          this.reasonList = res.data
+        })
+      },
+      immediate: true
+    }
+  },
   data() {
     return {
+      patentWritingStageList: [],
       caseTimeLimit: [],
       reasonList: [],
       isActualAttorney: false,
@@ -229,7 +251,11 @@ export default {
         rehearingUserId: '',
         opinions: [],
         tltTypeId: '',
-        abslimitDate: ''
+        abslimitDate: '',
+        writingStage: ''
+      },
+      rules: {
+        writingStage: [{ required: true, message: '请选择撰写阶段', trigger: 'change' }]
       },
       backData: {},
       backReasonView: false,
@@ -272,8 +298,13 @@ export default {
         this.addAuditUserList = res.data
         this.addAuditUserList.unshift({ userId: undefined, fullname: '无需加审' })
       })
-      queryPatentWritingReturnReasonList().then(res => {
-        this.reasonList = res.data
+      // queryPatentWritingReturnReasonList().then(res => {
+      //   this.reasonList = res.data
+      // })
+      queryPatentWritingReturnReasonCurrentList({
+        parentId: 0
+      }).then(res => {
+        this.patentWritingStageList = res.data
       })
       // querycustSelectClass({classId: '1202'}).then(res => {
       //   this.reasonList = res.data['1202']
@@ -298,6 +329,11 @@ export default {
       this.audit(result)
     },
     audit(result) {
+      this.$refs.submission.validate(valid => { if (!valid) return })
+      if (!this.patentWritingDetail.writingStage) {
+        this.$message.warning('请选择撰写阶段')
+        return
+      }
       this.$commonUtils.handleObjNullAttr(this.patentWritingDetail, this.backData)
       patentWritingappExamine({
         id: this.patentWritingId,
@@ -308,7 +344,8 @@ export default {
         materialIdList: this.materialIdList.length ? this.materialIdList : undefined,
         nullValueList: this.patentWritingDetail.nullValueList,
         tltTypeId: this.patentWritingDetail.tltTypeId || undefined,
-        abslimitDate: this.patentWritingDetail.abslimitDate || undefined
+        abslimitDate: this.patentWritingDetail.abslimitDate || undefined,
+        writingStage: this.patentWritingDetail.writingStage || undefined
       }).then(res => {
         this.$message.success('操作成功')
         this.$emit('changeFalse', true)
@@ -347,31 +384,39 @@ export default {
       })
     },
     save() {
-      savePatentWriting({
-        id: this.patentWritingId,
-        rehearingUserId: this.patentWritingDetail.rehearingUserId || undefined,
-        materialIdList: this.materialIdList.length ? this.materialIdList : undefined,
-        tltTypeId: this.patentWritingDetail.tltTypeId || undefined,
-        abslimitDate: this.patentWritingDetail.abslimitDate || undefined
-      }).then(res => {
-        this.$message.success('保存成功')
-        this.$emit('changeFalse', true)
+      this.$refs.submission.validate(valid => {
+        if (!valid) return
+        savePatentWriting({
+          id: this.patentWritingId,
+          rehearingUserId: this.patentWritingDetail.rehearingUserId || undefined,
+          materialIdList: this.materialIdList.length ? this.materialIdList : undefined,
+          tltTypeId: this.patentWritingDetail.tltTypeId || undefined,
+          abslimitDate: this.patentWritingDetail.abslimitDate || undefined,
+          writingStage: this.patentWritingDetail.writingStage || undefined
+        }).then(res => {
+          this.$message.success('保存成功')
+          this.$emit('changeFalse', true)
+        })
       })
     },
     submit() {
-      if (this.patentWritingDetail.independentWriter == 1 && this.patentWritingDetail.taskNo == 1 && !this.patentWritingDetail.rehearingUserId) {
-        this.$message.warning('请选择加审人')
-        return
-      }
-      patentWritingappSubmit({
-        id: this.patentWritingId,
-        rehearingUserId: this.patentWritingDetail.rehearingUserId || undefined,
-        materialIdList: this.materialIdList.length ? this.materialIdList : undefined,
-        tltTypeId: this.patentWritingDetail.tltTypeId || undefined,
-        abslimitDate: this.patentWritingDetail.abslimitDate || undefined
-      }).then(res => {
-        this.$message.success('提交成功')
-        this.$emit('changeFalse', true)
+      this.$refs.submission.validate(valid => {
+        if (!valid) return
+        if (this.patentWritingDetail.independentWriter == 1 && this.patentWritingDetail.taskNo == 1 && !this.patentWritingDetail.rehearingUserId) {
+          this.$message.warning('请选择加审人')
+          return
+        }
+        patentWritingappSubmit({
+          id: this.patentWritingId,
+          rehearingUserId: this.patentWritingDetail.rehearingUserId || undefined,
+          materialIdList: this.materialIdList.length ? this.materialIdList : undefined,
+          tltTypeId: this.patentWritingDetail.tltTypeId || undefined,
+          abslimitDate: this.patentWritingDetail.abslimitDate || undefined,
+          writingStage: this.patentWritingDetail.writingStage || undefined
+        }).then(res => {
+          this.$message.success('提交成功')
+          this.$emit('changeFalse', true)
+        })
       })
     },
     onRowUploadSuccess(res, row) {

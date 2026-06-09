@@ -70,6 +70,11 @@
                      icon="el-icon-brush"></el-button>
         </div>
         <div class="brush_right export-action-wrap" style="top: -40px">
+          <div style="cursor:pointer;display:flex;align-items:center;font-size: 14px;padding-right: 6px;margin-left: 10px">
+            <el-button type="text" @click="exportList(2)">导出</el-button>
+            <span style="color: #52A2F4;margin: 0 5px"> / </span>
+            <el-button type="text" @click="exportList(1)">全局导出</el-button>
+          </div>
         </div>
         <div>
           <AgGridVue
@@ -162,7 +167,7 @@
     </el-dialog>
 
     <SelectOption :buss-id="bussId" v-if="selectionOptionState" :dialog-visible="selectionOptionState"
-                  @cancel="closeSelect" :idArray="getCurrentRowsData('acId')"
+                  @cancel="closeSelect" :idArray="getCurrentRowsData('id')"
                   :defaultMultipleSelect="preferenceList.map(i=>i.title)" :exportType="exportType"
                   :exportQueryModel="exportQueryModel"></SelectOption>
   </div>
@@ -242,7 +247,7 @@
         selectionOptionState: false,
         checkCaseList: [],
         checkFilterList: [],
-        bussId: 101,
+        bussId: 103,
         exportType: 1,
         exportQueryModel: '',
         total: 0,

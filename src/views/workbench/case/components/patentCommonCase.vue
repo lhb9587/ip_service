@@ -1720,8 +1720,6 @@
               </el-col>
             </el-row>
             <el-row class="border-top">
-                  <el-col :span="24">
-                    <el-row class="">
                       <el-col :span="12">
                         <el-form-item label="被申请人名称中文:" prop="respondentNameCn" class="postInfo-container-item">
                           <el-select
@@ -1748,12 +1746,8 @@
                           <el-input v-model="caseDetailFormData.respondentAddrCn" placeholder="请填写被申请人地址中文"></el-input>
                         </el-form-item>
                       </el-col>
-                    </el-row>
-                  </el-col>
                 </el-row>
                 <el-row class="form-border" style="border-top: none;">
-                  <el-col :span="24">
-                    <el-row class="">
                       <el-col :span="12">
                         <el-form-item label="被申请人名称英文:" prop="respondentNameEn" class="postInfo-container-item">
                           <el-input v-model="caseDetailFormData.respondentNameEn" placeholder="请填写被申请人名称英文"></el-input>
@@ -1764,8 +1758,6 @@
                           <el-input v-model="caseDetailFormData.respondentAddrEn" placeholder="请填写被申请人地址英文"></el-input>
                         </el-form-item>
                       </el-col>
-                    </el-row>
-                  </el-col>
                 </el-row>
         </div>
 
@@ -2519,7 +2511,7 @@
     },
     computed: {
       respondentCaseTypes() {
-        return ['注册驳回复审','商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','国际注册驳回复审','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','答复临时驳回/审查意见（境外）','无效宣告复审','著作权行政复议', '咨询', '其他']
+        return ['商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','无效宣告复审','著作权行政复议', '咨询', '其他']
       },
       hasApplicationType() {
         return this.caseDetailFormData.patentCaseApplicationList && this.caseDetailFormData.patentCaseApplicationList.find(item => item.applicationType == '1752')

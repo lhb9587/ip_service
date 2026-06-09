@@ -13,6 +13,7 @@
           v-if="!$route.meta.newCustomer && !$route.path.includes('finance_') && !$route.path.includes('new_dashboard') && !$route.path.includes('hrm') && !$route.path.includes('partner_weekly_report') && !$route.path.includes('lawyer_performance')
            && !$route.path.includes('contract_management')
            && !$route.path.includes('contract_detail')
+           && !$route.path.includes('investigation_protection_detail')
            && !$route.path.includes('travel_management')"
           class="breadcrumb-container"/>
         <!--        财务顶部菜单-->

@@ -283,7 +283,7 @@
     },
     computed: {
       respondentCaseTypes() {
-        return ['注册驳回复审','商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','国际注册驳回复审','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','答复临时驳回/审查意见（境外）','无效宣告复审','著作权行政复议', '咨询', '其他']
+        return ['商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','无效宣告复审','著作权行政复议', '咨询', '其他']
       },
       chongtuAuditViewCom(){
         return !!this.chongtuAuditView
@@ -325,7 +325,7 @@
         return text.replace(regex, `<span style="color: red;">${key}</span>`);
       },
       async chongtuTestFunc(flag) {
-        if (this.caseDetailFormData.ctAudit && !flag) return false
+        if ((this.caseDetailFormData.ctAudit && this.caseDetailFormData.ctAudit !==1) || !flag) return false
         const data = this.$commonUtils.cleanNullAttr(this.caseDetailFormData)
         delete data.status
 
@@ -571,13 +571,13 @@
           this.$message.error('承办律师或客户律师有误！')
           return false
         }
-        if(!this.caseDetailFormData.trademarkCaseCustWorkgroups || 
-           !this.caseDetailFormData.trademarkCaseCustWorkgroups[0] || 
+        if(!this.caseDetailFormData.trademarkCaseCustWorkgroups ||
+           !this.caseDetailFormData.trademarkCaseCustWorkgroups[0] ||
            !this.caseDetailFormData.trademarkCaseCustWorkgroups[0].wkgId){
           this.$message.error('请选择客户组')
           return false
         }
-        if(!this.caseDetailFormData.caseCustRespUserArray || 
+        if(!this.caseDetailFormData.caseCustRespUserArray ||
            !this.caseDetailFormData.caseCustRespUserArray.length){
           this.$message.error('请选择客户负责人')
           return false
@@ -723,7 +723,7 @@
             checkChongTu
           }
         }
-        if (this.respondentCaseTypes.includes(this.caseDetailFormData.caseType) && await this.chongtuTestFunc(true)) return ;
+        if (await this.chongtuTestFunc(1)) return ;
         delete data.checkChongTu
         heighCreditUrl(data)
           .then(response => {

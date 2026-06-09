@@ -300,6 +300,14 @@
             {{formTime.auditNote}}
           </el-row>
         </div>
+        <div class="divider">
+          <span class="">
+              赠送礼品
+          </span>
+        </div>
+        <el-row style="border: none">
+          {{formTime.giveAsGift}}
+        </el-row>
       </el-form>
       <div class="divider">
           <span class="">
@@ -361,6 +369,7 @@
         domainList: ['保护', '诉讼', '商标', '专利', '域名', '著作权', '非诉', '无'],
         formTime: {
           hasBusinessTrip: 0,
+          giveAsGift: undefined,
           workContent: undefined,
           userId: this.$store.getters.userId,
           materialIdList: [],

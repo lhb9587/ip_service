@@ -67,3 +67,11 @@ export function delePatentWriting(data) {
     data
   })
 }
+// 撰写阶段查询
+export function queryPatentWritingReturnReasonCurrentList(data) {
+    return request({
+    url: serviceApi.queryPatentWritingReturnReasonCurrentList,
+    method: 'post',
+    data
+  })
+}

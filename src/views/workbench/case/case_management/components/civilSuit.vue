@@ -284,6 +284,7 @@
               <el-menu-item index="1-2-6">对方当事人往来</el-menu-item>
               <!-- <el-menu-item index="1-2-7">特批预立卷审批</el-menu-item> -->
               <el-menu-item index="1-2-8" v-if="taskType == 4">撰写审核</el-menu-item>
+              <el-menu-item index="1-2-9" v-if="pageTitle==='案件管理'">调查保护</el-menu-item>
             </el-submenu>
             <el-submenu index="1-3" v-allow="154">
               <template slot="title">新建时限</template>
@@ -689,6 +690,11 @@
     <el-dialog class="patent-writing" title="撰写审核" :visible.sync="draftState" width="70%">
       <PatentDrafting v-if="draftState" :taskType="taskType" :caseId="getSelectedRows().map(item=>item.caseId)" @changeFalse="draftState = false" />                
     </el-dialog>
+    <investigation-protection-dialog
+      :visible.sync="investigationProtectionVisible"
+      :case-data="investigationProtectionCase"
+      @saved="queryCaseList"
+    />
     <litigationSubmission @updateData="queryCaseList" :business="business" :taskType="taskType" :changeDoc="isChangeDoc"
                           :isAuditing="isAuditing"
                           :title="title"
@@ -917,6 +923,7 @@
   import Willtable from "@/components/Willtable";
   import {mapGetters, mapState} from "vuex";
   import {downLoadAll, throttle} from "@/utils";
+  import { getInvestigationProtectionFlowRoute } from '@/utils/investigationProtection'
   import seeCaseDetail from '@/views/workbench/case/components/ManualIdentification/seeCaseDetail'
   // import {browserBehavior} from '../../components/browserBehavior'
   import Bus from '@/utils/Bus'
@@ -933,6 +940,7 @@ import rememberPosition from '@/mixins/rememberPosition.vue'
   import CreateWorkHour from "../../../workTime/components/CreateWorkHour";
   import {createPOA, queryMandate,createReceipt} from "../../../../../api/formList";
 import PatentDrafting from '@/views/workbench/case/components/PatentDrafting.vue';
+import InvestigationProtectionDialog from '@/views/workbench/case/components/InvestigationProtectionDialog'
   export default {
     mixins: [rememberPosition],
     props: {
@@ -972,6 +980,8 @@ import PatentDrafting from '@/views/workbench/case/components/PatentDrafting.vue
         tableHeader = JSON.parse(localStorage.getItem('tableHeader')).find(item => item.name == this.$route.name).tableHeader
       }
       return {
+        investigationProtectionVisible: false,
+        investigationProtectionCase: {},
         draftState: false,
         scrollTop: 0,
         isEnterPressed: false, // 标志变量，用于防止回车键触发handleChangeSearch
@@ -2189,6 +2199,10 @@ import PatentDrafting from '@/views/workbench/case/components/PatentDrafting.vue
           this.draftState = true;
           // this.queryCaseList();
         }
+        if (key === "1-2-9") {
+          this.openInvestigationProtection()
+          return
+        }
         if (key === "批量操作") {
           this.multipleTypeText = "批量操作";
           // this.queryCaseList();
@@ -2281,6 +2295,27 @@ import PatentDrafting from '@/views/workbench/case/components/PatentDrafting.vue
       exportList(flag) {
         this.exportType = flag
         this.selectionOptionState = true
+      },
+      openInvestigationProtection() {
+        if (this.pageTitle !== '案件管理') {
+          this.$message.warning('请在案件管理中创建调查保护')
+          return
+        }
+        const selectedRows = this.getSelectedRows()
+        if (!selectedRows.length) {
+          this.$message.error('请先选择一个案件！')
+          return
+        }
+        if (selectedRows.length > 1) {
+          this.$message.error('只能选择一个案件！')
+          return
+        }
+        if (!selectedRows[0].caseId) {
+          this.$message.error('选中案件缺少caseId，无法创建调查保护')
+          return
+        }
+        this.investigationProtectionCase = selectedRows[0]
+        this.investigationProtectionVisible = true
       },
       getLanglist(array) {
         let arr = [];
@@ -3633,6 +3668,9 @@ import PatentDrafting from '@/views/workbench/case/components/PatentDrafting.vue
         }
         if (this.pageTitle === '案件管理') {
           let hash = {}
+          const investigationProtectionMenuList = this.taskType == 3
+            ? [{ name: '\u67e5\u770b\u8c03\u67e5\u4fdd\u62a4\u6d41\u7a0b', action: 'viewInvestigationProtectionFlow' }]
+            : []
           this.taskType == 4 && (this.rowContextmenuList = [
             { name: '相关案件', action: 'relevant' },
             { name:'复制立案',action: 'createCase'},
@@ -3652,7 +3690,7 @@ import PatentDrafting from '@/views/workbench/case/components/PatentDrafting.vue
             { name: '删除', action: 'delCase',permissions:205, isSubmitOfficial:0},
             { name: '删除', action: 'delCase',permissions:206, isSubmitOfficial:1 },
             {name: '删除', action: 'delCase', permissions: 250},
-          ]).filter(item => {
+          ], investigationProtectionMenuList).filter(item => {
             if(row.agentNum.slice(0,2) === 'NO' && row.createUserId == this.userId){
               return true
             }
@@ -3721,6 +3759,10 @@ import PatentDrafting from '@/views/workbench/case/components/PatentDrafting.vue
             this[rs](row, column, event);
           }
         });
+      },
+      viewInvestigationProtectionFlow(row) {
+        const routeUrl = this.$router.resolve(getInvestigationProtectionFlowRoute(row))
+        window.open(routeUrl.href, '_blank')
       },
       createCase(row) {
         this.copyForm.rowData = row
@@ -4090,7 +4132,8 @@ import PatentDrafting from '@/views/workbench/case/components/PatentDrafting.vue
       FileDownLoadDialog,
       UploadProofreading,
       TrawSheetDetails,
-      PatentDrafting
+      PatentDrafting,
+      InvestigationProtectionDialog
     }
   };
 </script>

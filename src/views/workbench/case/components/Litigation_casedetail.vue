@@ -4316,7 +4316,7 @@ position :''
        // window.location.reload()
     },
     async chongtuTestFunc(flag){
-        if (this.caseDetailFoemData.ctAudit && !flag) return false;
+        if ((this.caseDetailFoemData.ctAudit && this.caseDetailFoemData.ctAudit !==1) || !flag) return false;
         return new Promise(resolve => {
           chongtuTest({
             taskType: 2,
@@ -4466,7 +4466,7 @@ position :''
      delete data.checkChongTu
       this.$refs['postForm'].validate(async valid => {
         if (valid) {
-          if (await this.chongtuTestFunc()) return ;
+          if (await this.chongtuTestFunc(1)) return ;
           delete data.checkChongTu
           handoverCase(data)
             .then(res => {

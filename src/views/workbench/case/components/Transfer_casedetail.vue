@@ -4775,7 +4775,6 @@
     import {queryImageGoodsList} from "../../../../api/caseList";
     import { isInputAll } from '../../../../utils'
     import TagsModal from './TagsModal.vue'
-    import { MessageBox } from 'element-ui'
   const defaultdcmr = [
     "filePath",
     "tmName",
@@ -4970,7 +4969,7 @@
         return !!this.dialogFormjoin;
       },
       respondentCaseTypes() {
-        return ['注册驳回复审','商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','国际注册驳回复审','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','答复临时驳回/审查意见（境外）','无效宣告复审','著作权行政复议', '咨询', '其他']
+        return ['商标查询','商标监控报告','域名争议','著作权争议','常年知识产权法律顾问','签署代理合同协议','其他著作权案件','撤销通用名称答辩','撤销成为通用名称注册商标','商标监控总卷/协议','研讨','常年法律顾问','危机事务处理','合同撰写审核','行政复议','撤销注册不当','顾问服务','无效宣告复审','著作权行政复议', '咨询', '其他']
       },
       caseTypeAndAppFromto(){
         return (['不予注册复审','商标注册','分割申请','异议','变名变址','转让/移转','续展','删减商品项目','变更注册申请代理机构','更正商标申请事项','注册驳回复审','国际注册驳回复审','撤销商标复审','无效宣告复审','异议答辩','撤三答辩(提供使用证明)','撤销通用名称答辩','参与不予注册复审','无效宣告答辩','撤销复审答辩','撤销三年停止使用申请','撤销成为通用名称注册商标','无效宣告申请','撤回商标评审','行政复议','许可备案','补发商标注册证','补发商标变转续证明','出具优先权证明文件','出具商标注册证明','商标注销','撤回商标申请'].includes(this.ch_caseTypr))&&['内-内', '外-内', '台-内'].includes(this.caseDetailFoemData.appFromto)
@@ -7878,7 +7877,7 @@
             this.$message.error('承办律师或客户律师有误！')
             return
           }
-          this.submitCaseForm("prefiling", 1, 1);
+          this.submitCaseForm("prefiling", 1, this.caseDetailFoemData.ctAudit == 4 ? 0 : 1);
         } else if (command == "createBills") {
           this.$router.push({
             path: "/workbench/finance/off_bill/bill",
@@ -8131,27 +8130,7 @@
       },
       //检查申请人中文名称空格
       async checkSpaces(){
-        return new Promise((resolve, reject) => {
-          if ((this.caseDetailFoemData.appFromto == '内-内'||this.caseDetailFoemData.appFromto == '外-内')&&this.caseDetailFoemData.submitType == '网上申请' && this.caseDetailFoemData.appCnName) {
-            const regex = /[\s\u3000]/g;
-            if (regex.test(this.caseDetailFoemData.appCnName)) {
-              MessageBox.confirm('网上申请限制申请人中文名称不能有空格，是否去除？', '提示', {
-                confirmButtonText: '是',
-                cancelButtonText: '否',
-                type: 'warning'
-              }).then(() => {
-                this.caseDetailFoemData.appCnName = this.caseDetailFoemData.appCnName.replace(regex, '')
-                resolve()
-              }).catch(() => {
-                resolve()
-              })
-            }else{
-              resolve()
-            }
-          }else{
-            resolve()
-          }
-        })
+        return Promise.resolve()
       },
       async submitCaseForm (forwordType, checkCase = 1, checkChongTu = 1) {
         console.log('submitCaseForm1222222');
@@ -9667,7 +9646,7 @@
                 // }
               })) return
             // 冲突检查
-            if (await this.chongtuTestFunc(1)) return ;
+            if (await this.chongtuTestFunc(checkChongTu)) return ;
 
             checkCase && await this.delAllGoodsJudge(data)
             heighCreditUrl(data)

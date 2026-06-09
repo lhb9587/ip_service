@@ -19,6 +19,7 @@ const SYS_URL13 = '/ai_write/'
 const SYS_URL14 = '/ip_site/interface/'
 
 const URL_Tem = {
+  queryPatentWritingReturnReasonCurrentList: SYS_URL1 + 'patentWriting/queryPatentWritingReturnReasonCurrentList',
   delePatentWriting: SYS_URL1 + 'patentWriting/delePatentWriting',
   savePatentWriting: SYS_URL1 + 'patentWriting/savePatentWriting',
   queryPatentWritingReturnReasonList: SYS_URL1 + 'patentWriting/queryPatentWritingReturnReasonList',
@@ -937,6 +938,7 @@ const URL_Tem = {
 
   //合同待办
   getContractList: SYS_URL12 + 'contract/getList',
+  getInvestTaskList: SYS_URL1 + 'investTask/list',
 
   //自动撰写
   createReexaminationReasonDoc: SYS_URL13 + 'proposal/createReexaminationReasonDoc',

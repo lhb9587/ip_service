@@ -443,6 +443,13 @@ export function getContractList(data) {
     data
   })
 }
+export function getInvestTaskList(data) {
+  return request({
+    url: serviceApi.getInvestTaskList,
+    method: 'post',
+    data
+  })
+}
 export function queryAutowriteTaskRecord(data) {
   return request({
     url: serviceApi.queryAutowriteTaskRecord,
@@ -521,4 +528,3 @@ export function queryToolUserIdList(data) {
     data
   })
 }
-

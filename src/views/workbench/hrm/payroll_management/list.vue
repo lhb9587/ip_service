@@ -194,6 +194,7 @@ export default {
     saveDialog() {
       this.dataInfo = []
       this.saveVisible = false
+      this.handleSearch()
     },
     // 附件下载
     downLoad(data) {
@@ -527,6 +528,9 @@ export default {
           width:this.getLoactionWidth(item.title)=='auto'?200:this.getLoactionWidth(item.title),
           resizable: true,
           sortable: true,
+          comparator: (a, b) => {
+            return this.$commonUtils.sort(a, b, item.value)
+          },
           filter: 'agSetColumnFilter',
           menuTabs: ['filterMenuTab','generalMenuTab','columnsMenuTab'],
           cellRenderer: this.cellRenderer,

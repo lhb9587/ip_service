@@ -465,10 +465,20 @@ export default {
         }
       });
     },
+    resolveCaseTypeId() {
+      const firstCase = this.caseList && this.caseList[0]
+      if (firstCase) {
+        return firstCase.caseTypeId
+      }
+      return '' 
+    },
     queryMaterialTypeByDocId(doctId) {
-      console.log(this.caseList,'this.caseList');
-      
-      queryMaterialTypeByDocId({ doctId ,taskType:this.taskType,caseTypeId:this.caseList[0].caseTypeId}).then(res => {
+      const params = { doctId, taskType: this.taskType }
+      const caseTypeId = this.resolveCaseTypeId()
+      if (caseTypeId) {
+        params.caseTypeId = caseTypeId
+      }
+      queryMaterialTypeByDocId(params).then(res => {
         this.materialTypeByDocIdList = res.data;
         if(this.patentOneMaterial) {
           this.submitData.materialTypeId = 301509;

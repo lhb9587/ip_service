@@ -203,6 +203,7 @@
             payMethod: 1847,
             receiptTitle: 1838
           });
+          n == 'createCao' && this.initImportQueryModuleData()
           (n == 'editQing' || n == 'viewQing') ? this.postForm = this.editData : '';
         },
         immediate: true
@@ -258,6 +259,27 @@
       this.defaultQuerySearch()
     },
     methods: {
+      syncImportQueryModuleData() {
+        const queryModuleData = {
+          payListType: this.payListType || 1826
+        }
+        this.queryModuleData = queryModuleData
+        const queryModuleDataList = JSON.parse(localStorage.getItem('queryModuleData')) || []
+        const currentModule = queryModuleDataList.find(item => item.name == this.$options.name)
+        if (currentModule) {
+          currentModule.queryModuleData = queryModuleData
+        } else {
+          queryModuleDataList.push({ name: this.$options.name, queryModuleData })
+        }
+        localStorage.setItem('queryModuleData', JSON.stringify(queryModuleDataList))
+      },
+      initImportQueryModuleData() {
+        this.listQuery = {
+          pageNo: 1,
+          pageSize: 10
+        }
+        this.syncImportQueryModuleData()
+      },
       addCao() {
         if (this.$refs.rightTable && this.$refs.rightTable.getSelectedRows().length) {
           let data = this.$refs.rightTable.getSelectedRows().map(item => ({
@@ -322,7 +344,6 @@
           && JSON.parse(localStorage.getItem('queryModuleData')).find(item => item.name == this.$options.name).queryModuleData
           || {}
         queryOfficialBillRecordList({
-          payListType: 1826,
           ...this.queryModuleData,
           ...this.listQuery
         }).then(res => {
@@ -332,6 +353,9 @@
       },
       defaultQuerySearch() {
         this.queryModuleData = JSON.parse(localStorage.getItem('queryModuleData')) ? JSON.parse(localStorage.getItem('queryModuleData')).find(item => item.name == this.$options.name) ? JSON.parse(localStorage.getItem('queryModuleData')).find(item => item.name == this.$options.name).queryModuleData : {} : {}
+        if (this.sign == 'createCao') {
+          this.syncImportQueryModuleData()
+        }
       },
     }
   }

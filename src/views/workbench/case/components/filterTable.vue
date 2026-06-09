@@ -271,6 +271,7 @@
               <el-menu-item index="1-2-5" >外代所往来</el-menu-item>
               <el-menu-item index="1-2-6" >对方当事人往来</el-menu-item>
               <el-menu-item index="1-2-7" v-if="$store.getters.permissions.includes(378)">撰写指派</el-menu-item>
+              <el-menu-item index="1-2-9" v-if="pageTitle==='案件管理'">调查保护</el-menu-item>
               <!--<el-menu-item index="1-2-7">特批预立卷审批</el-menu-item>-->
             </el-submenu>
             <el-submenu index="1-3" v-allow="154">
@@ -1021,6 +1022,12 @@
       <price-grid :idArray="priceIdArray" @closeImportDialog="closeImportDialog"/>
     </el-dialog>
 
+    <investigation-protection-dialog
+      :visible.sync="investigationProtectionVisible"
+      :case-data="investigationProtectionCase"
+      @saved="queryCaseList"
+    />
+
 <!--  撰写指派 trademarkWritingView -->
     <el-dialog
       title="撰写指派"
@@ -1311,6 +1318,7 @@ import {queryCustomerPinpai, updateCasePinpai,queryCustContactAllUrl,queryCollab
 import {queryCaseSurplusList} from "@/api/billApi";
 import CaseSurplus from "@/views/workbench/case/components/CaseSurplus.vue";
 import { createRejectionDoc } from '@/api/rejectionNotice'
+import InvestigationProtectionDialog from './InvestigationProtectionDialog'
 export default {
   props: {
     field:{
@@ -1350,6 +1358,8 @@ export default {
     }
 
     return {
+      investigationProtectionVisible: false,
+      investigationProtectionCase: {},
       fileDownLoadView: false,
       rejectionOption: 1, // 驳回复审选项，默认选择"是"
       rejectionDialogVisible: false, // 驳回复审对话框显示状态
@@ -2764,6 +2774,10 @@ export default {
       if (key === "1-2-8") {
         this.multipleTypeText = "境外盈余核算";
       }
+      if (key === "1-2-9") {
+        this.openInvestigationProtection()
+        return
+      }
       if (key === "批量操作") {
         this.multipleTypeText = "批量操作";
         // this.queryCaseList();
@@ -2827,6 +2841,27 @@ export default {
     exportList(flag){
       this.exportType=flag
       this.selectionOptionState=true
+    },
+    openInvestigationProtection() {
+      if (this.pageTitle !== '案件管理') {
+        this.$message.warning('请在案件管理中创建调查保护')
+        return
+      }
+      const selectedRows = this.getSelectedRows()
+      if (!selectedRows.length) {
+        this.$message.error('请先选择一个案件！')
+        return
+      }
+      if (selectedRows.length > 1) {
+        this.$message.error('只能选择一个案件！')
+        return
+      }
+      if (!selectedRows[0].caseId) {
+        this.$message.error('选中案件缺少caseId，无法创建调查保护')
+        return
+      }
+      this.investigationProtectionCase = selectedRows[0]
+      this.investigationProtectionVisible = true
     },
     toExamine() {
       this.requireList=[]
@@ -5332,7 +5367,8 @@ export default {
     UploadProofreading,
     FileDownLoadDialog,
     VueWilltable,
-    TagsModal
+    TagsModal,
+    InvestigationProtectionDialog
     // AgGridVue
   }
 };

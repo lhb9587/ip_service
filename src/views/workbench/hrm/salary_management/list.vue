@@ -263,6 +263,9 @@ export default {
           item.width = this.getLoactionWidth(item.title)=='auto'?200:this.getLoactionWidth(item.title)
           item.resizable = true
           item.sortable = true
+          item.comparator = (a, b) => {
+            return this.$commonUtils.sort(a,b,item.value)
+          }
           item.filter = 'agSetColumnFilter'
           item.menuTabs = ['filterMenuTab','generalMenuTab','columnsMenuTab']
           item.cellRenderer = this.cellRenderer
@@ -589,6 +592,9 @@ export default {
           width:this.getLoactionWidth(item.title)=='auto'?200:this.getLoactionWidth(item.title),
           resizable: true,
           sortable: true,
+          comparator: (a, b) => {
+            return this.$commonUtils.sort(a, b, item.value)
+          },
           filter: 'agSetColumnFilter',
           menuTabs: ['filterMenuTab','generalMenuTab','columnsMenuTab'],
           cellRenderer: this.cellRenderer,

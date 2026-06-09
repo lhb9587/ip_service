@@ -78,6 +78,11 @@
           <ContractToDoTask/>
         </transition>
       </el-tab-pane>
+      <el-tab-pane :label="`${investigationProtectionTodoTitle} ${investigationProtectionTodoTotal ? '(' + investigationProtectionTodoTotal + ')' : '(0)'}`" name="14" >
+        <transition name="show" mode="out-in">
+          <InvestigationProtectionToDoTask @updateTotal="updateInvestigationProtectionTodoTotal" />
+        </transition>
+      </el-tab-pane>
       <!-- <el-tab-pane :label="`出差待办 ${$store.state.user.todoTaskNotice.bussTripSum?'('+$store.state.user.todoTaskNotice.bussTripSum+')':'(0)'}`" name="14" >
         <transition name="show" mode="out-in">
           <BusinesstripToDoTask />
@@ -129,7 +134,9 @@
   import WaitAuditWorkTime from '@/views/workbench/toDoTasks/components/WaitAuditWorkTime.vue'
   import AppTask from '@/views/workbench/toDoTasks/components/AppTask.vue'
   import ContractToDoTask from '@/views/workbench/toDoTasks/components/ContractToDoTask.vue'
+  import InvestigationProtectionToDoTask from '@/views/workbench/toDoTasks/components/InvestigationProtectionToDoTask.vue'
   import BusinesstripToDoTask from '@/views/workbench/toDoTasks/components/BusinesstripToDoTask.vue'
+  import { getInvestTaskList } from '@/api/dashboard'
   export default {
     name: "toDoTasksChildren",
     data() {
@@ -141,7 +148,9 @@
         transfromState:false,
         transfromType:'任务权限转交',
         multipleSelection:[],
-        handleDelayView: false
+        handleDelayView: false,
+        investigationProtectionTodoTotal: 0,
+        investigationProtectionTodoTitle: '\u8c03\u67e5\u4fdd\u62a4'
       };
     },
     beforeRouteEnter(to, from, next) {
@@ -192,6 +201,7 @@
           : '1'
         this.$store.dispatch('user/getTodoTaskNotice');
       }
+      this.fetchInvestigationProtectionTodoTotal()
       // if(!localStorage.getItem('toDoTasksChildren')){
       //   if(this.$store.getters.permissions.includes(265)){
       //     this.activeName = '7'
@@ -214,6 +224,7 @@
           : '1'
         this.$store.dispatch('user/getTodoTaskNotice');
       }
+      this.fetchInvestigationProtectionTodoTotal()
       // this.activeName = localStorage.getItem('toDoTasksChildren')
       //   ?
       //   localStorage.getItem('toDoTasksChildren')
@@ -225,6 +236,18 @@
     methods: {
       handleClick() {
         localStorage.setItem('toDoTasksChildren',this.activeName)
+      },
+      fetchInvestigationProtectionTodoTotal() {
+        getInvestTaskList({
+          page: 1,
+          pageSize: 1,
+          todoList: 1
+        }).then(res => {
+          this.investigationProtectionTodoTotal = res.total || 0
+        })
+      },
+      updateInvestigationProtectionTodoTotal(total) {
+        this.investigationProtectionTodoTotal = total || 0
       },
       closeHandover(e){
         this.transfromState=false
@@ -248,6 +271,7 @@
       }
     },
     components: {
+      InvestigationProtectionToDoTask,
       BusinesstripToDoTask,
       AppTask,
       ContractToDoTask,

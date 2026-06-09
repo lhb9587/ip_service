@@ -184,6 +184,7 @@
             <el-menu-item index="1-4">上传文件</el-menu-item>
             <el-menu-item index="1-5">任务</el-menu-item>
             <el-menu-item index="1-6">官方通知</el-menu-item>
+            <el-menu-item index="1-7" v-if="pageTitle==='案件管理'">调查保护</el-menu-item>
           </el-submenu>
         </el-menu>
 <!--        <handTime ref="handTime" noQuery="1" :caseData="caseData" style="visibility: hidden"></handTime>-->
@@ -198,6 +199,11 @@
         >
           <create-work-hour v-if="workHourView" :caseData="caseData" @closeDialog="workHourView = false"></create-work-hour>
         </el-dialog>
+        <investigation-protection-dialog
+          :visible.sync="investigationProtectionVisible"
+          :case-data="investigationProtectionCase"
+          @saved="queryCaseList"
+        />
         <el-button type="primary"  size="small" v-if="pageTitle==='案件管理'&& isSuggestion"  @click="handleSelect('立卷')" >立卷</el-button>
         <!--        <el-menu class="el-menu-demo" mode="horizontal" @select="handleSelect" v-allow="83">-->
         <!--          <el-submenu index="1">-->
@@ -467,6 +473,7 @@
   // import {browserBehavior} from '../../components/browserBehavior'
   import Bus from "../../../../../utils/Bus";
   import CreateWorkHour from "../../../workTime/components/CreateWorkHour";
+  import InvestigationProtectionDialog from "@/views/workbench/case/components/InvestigationProtectionDialog";
   export default {
     props: {
 
@@ -499,6 +506,8 @@
         tableHeader=JSON.parse(localStorage.getItem('tableHeader')).find(item=>item.name==this.$options.name+this.$route.name+this.field).tableHeader
       }
       return {
+        investigationProtectionVisible: false,
+        investigationProtectionCase: {},
         workHourView: false,
         caseData:{
 
@@ -1082,6 +1091,10 @@
 
           this.multipleTypeText = "官方通知";
         }
+        if (key === "1-7") {
+          this.openInvestigationProtection()
+          return
+        }
         // if (key === "1-2-3") {
         //   this.selectionState = true;
         //   this.multipleTypeText = "客户往来";
@@ -1130,6 +1143,27 @@
           // this.multipleSelection = []
           this.selectionOptionState=true
         }
+      },
+      openInvestigationProtection() {
+        if (this.pageTitle !== '案件管理') {
+          this.$message.warning('请在案件管理中创建调查保护')
+          return
+        }
+        const selectedRows = this.getSelectedRows()
+        if (!selectedRows.length) {
+          this.$message.error('请先选择一个案件！')
+          return
+        }
+        if (selectedRows.length > 1) {
+          this.$message.error('只能选择一个案件！')
+          return
+        }
+        if (!selectedRows[0].caseId) {
+          this.$message.error('选中案件缺少caseId，无法创建调查保护')
+          return
+        }
+        this.investigationProtectionCase = selectedRows[0]
+        this.investigationProtectionVisible = true
       },
       getLanglist(array) {
         let arr = [];
@@ -2365,7 +2399,8 @@
       litigationOfficial,
       MyTabs,
       createTimeLimit,
-      CaseInvestigators
+      CaseInvestigators,
+      InvestigationProtectionDialog
     }
   };
 </script>
